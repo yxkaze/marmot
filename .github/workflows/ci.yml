@@ -1,0 +1,154 @@
+# =============================================================================
+# GitHub Actions CI 工作流
+# =============================================================================
+# 这个工作流会在以下情况触发：
+# 1. push 到 main/master 分支
+# 2. 创建 Pull Request
+#
+# 执行内容：
+# - 多 Python 版本测试 (3.10, 3.11, 3.12, 3.13)
+# - 代码格式检查 (black, isort)
+# - 类型检查 (mypy)
+# - 测试覆盖率报告
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 测试任务：在多个 Python 版本上运行测试
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    
+    # 矩阵策略：同时在多个 Python 版本上测试
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+      # fail-fast: false 表示即使某个版本失败，其他版本继续测试
+      fail-fast: false
+
+    steps:
+      # 步骤1：检出代码
+      # uses 引用一个可复用的 action
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 步骤2：设置 Python 环境
+      # setup-python 会安装指定版本的 Python 并缓存 pip
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # 启用 pip 缓存，加速后续构建
+          cache: 'pip'
+
+      # 步骤3：安装依赖
+      # pip install -e ".[dev]" 安装项目及开发依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          # 安装额外的开发工具
+          pip install black isort mypy
+
+      # 步骤4：运行测试并生成覆盖率报告
+      # pytest-cov 会生成 coverage.xml 和 htmlcov/
+      - name: Run tests with coverage
+        run: |
+          pytest -v --cov=src/marmot --cov-report=xml --cov-report=term-missing
+
+      # 步骤5：上传覆盖率报告到 Codecov（可选）
+      # Codecov 是一个免费的覆盖率报告服务
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        # 只在 Python 3.12 上上传，避免重复
+        if: matrix.python-version == '3.12'
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # 代码质量检查任务：格式、类型检查
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install black isort mypy
+
+      # Black：代码格式检查
+      # --check 表示只检查不修改，--diff 显示差异
+      - name: Check code formatting with Black
+        run: black --check --diff src/ tests/
+
+      # isort：import 排序检查
+      - name: Check import sorting with isort
+        run: isort --check-only --diff src/ tests/
+
+      # mypy：静态类型检查
+      # --ignore-missing-imports 忽略第三方库的类型缺失
+      - name: Type check with mypy
+        run: mypy src/marmot --ignore-missing-imports --no-error-summary || true
+        # TODO: 移除 || true，修复所有类型错误后启用严格检查
+
+  # ---------------------------------------------------------------------------
+  # 构建检查：确保包可以正确构建
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test, lint]  # 依赖测试和 lint 通过
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      # 使用 python -m build 构建源码包和 wheel
+      - name: Build package
+        run: python -m build
+
+      # 使用 twine check 检查包的元数据
+      - name: Check package with twine
+        run: twine check dist/*
+
+      # 上传构建产物，供发布工作流使用
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          retention-days: 7

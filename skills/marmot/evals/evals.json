@@ -1,0 +1,23 @@
+{
+  "skill_name": "marmot",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我要用 Python 写一个告警系统，监控服务器的 CPU 使用率。当 CPU 超过 80% 警告，超过 95% 严重告警。需要连续 3 次超过阈值才触发。请给我完整的代码示例。",
+      "expected_output": "使用 Marmot 的 ThresholdRule + ThresholdLevel 注册多级阈值规则，consecutive_count=3，report() 上报指标值，包含完整的 import 和初始化代码。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我们有一百个 Elasticsearch 集群，需要监控整体的磁盘使用率。当平均磁盘超过 85% 时通过钉钉机器人告警。请问 Marmot 框架怎么实现？",
+      "expected_output": "使用 AggregateConfig(fn='avg', window=300) 配置聚合规则，各集群通过 labels 独立上报，DingTalkNotifier 配置 webhook_url 和 secret。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我有一个每天凌晨跑的数据同步 Job，经常莫名失败。想用 Marmot 监控这个 Job，失败了自动发飞书通知。怎么写最简单？",
+      "expected_output": "使用 @marmot.job() 装饰器，配置 timeout 和 notify='feishu'，注册 FeishuNotifier。失败自动告警，成功自动恢复。",
+      "files": []
+    }
+  ]
+}

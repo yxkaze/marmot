@@ -1,0 +1,111 @@
+[project]
+name = "marmot"
+version = "0.1.0"
+description = "Marmot — Lightweight alert framework for Python. Developer-friendly, zero-config monitoring with state machine, dedup, silence, escalation, and multi-channel notifications."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+keywords = ["alert", "monitoring", "threshold", "heartbeat", "notification", "dingtalk", "feishu", "wecom"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Monitoring",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "isort>=5.12",
+    "mypy>=1.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# =============================================================================
+# Pytest 配置
+# =============================================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# 添加命令行默认参数
+addopts = "-v --tb=short"
+# 标记定义
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# =============================================================================
+# Coverage 配置
+# =============================================================================
+[tool.coverage.run]
+source = ["src/marmot"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+# 覆盖率阈值（可选，低于此值会失败）
+# fail_under = 80
+
+# =============================================================================
+# Black 配置（代码格式化）
+# =============================================================================
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312", "py313"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+)/
+'''
+
+# =============================================================================
+# isort 配置（import 排序）
+# =============================================================================
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["marmot"]
+# import 分组顺序
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# =============================================================================
+# Mypy 配置（类型检查）
+# =============================================================================
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+# 以下选项可以逐步启用
+# strict = true
+# warn_redundant_casts = true
+# warn_unused_ignores = true

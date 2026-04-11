@@ -1,7 +1,7 @@
 # Marmot (土拨鼠) — Python 轻量级告警框架
 
-[![PyPI version](https://img.shields.io/pypi/v/marmot.svg)](https://pypi.org/project/marmot/)
-[![Python versions](https://img.shields.io/pypi/pyversions/marmot.svg)](https://pypi.org/project/marmot/)
+[![PyPI version](https://img.shields.io/pypi/v/marmot-alert.svg)](https://pypi.org/project/marmot-alert/)
+[![Python versions](https://img.shields.io/pypi/pyversions/marmot-alert.svg)](https://pypi.org/project/marmot-alert/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI](https://github.com/yxkaze/marmot/actions/workflows/ci.yml/badge.svg)](https://github.com/yxkaze/marmot/actions/workflows/ci.yml)
 
@@ -26,7 +26,7 @@
 ## 安装
 
 ```bash
-pip install marmot
+pip install marmot-alert
 ```
 
 ## 快速开始

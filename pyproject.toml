@@ -1,5 +1,5 @@
 [project]
-name = "marmot"
+name = "marmot-alert"
 version = "0.1.0"
 description = "Marmot — Lightweight alert framework for Python. Developer-friendly, zero-config monitoring with state machine, dedup, silence, escalation, and multi-channel notifications."
 readme = "README.md"

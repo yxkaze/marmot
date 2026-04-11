@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Marmot — Lightweight alert framework for Python. Developer-friendly, zero-config monitoring with state machine, dedup, silence, escalation, and multi-channel notifications."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "GPL-3.0-or-later"}
+license = {text = "Apache-2.0"}
 keywords = ["alert", "monitoring", "threshold", "heartbeat", "notification", "dingtalk", "feishu", "wecom"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",

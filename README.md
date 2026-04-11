@@ -2,9 +2,10 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/marmot.svg)](https://pypi.org/project/marmot/)
 [![Python versions](https://img.shields.io/pypi/pyversions/marmot.svg)](https://pypi.org/project/marmot/)
-[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI](https://github.com/yxkaze/marmot/actions/workflows/ci.yml/badge.svg)](https://github.com/yxkaze/marmot/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/yxkaze/marmot/branch/main/graph/badge.svg)](https://codecov.io/gh/yxkaze/marmot)
+
+English | **[简体中文](README_CN.md)**
 
 A developer-friendly, zero-dependency alert framework focused on **simplicity** and **practicality**. Register rules, report metrics, and let Marmot handle the rest: state machine, deduplication, silence windows, escalation, and multi-channel notifications.
 
@@ -200,7 +201,7 @@ mypy src/marmot
 
 ## License
 
-GNU General Public License v3.0 or later. See [LICENSE](LICENSE) for details.
+Apache License 2.0. See [LICENSE](LICENSE) for details.
 
 ## Contributing
 

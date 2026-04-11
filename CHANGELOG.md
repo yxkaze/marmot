@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code quality tools (black, isort, mypy)
 - Test coverage reporting with pytest-cov
 - Makefile for common development tasks
-- GPL v3 license
+- Apache 2.0 license
 - Contributing guidelines
 
 ## [0.1.0] - 2024-04-11

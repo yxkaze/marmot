@@ -177,7 +177,7 @@ API 端点：`/api/alerts`、`/api/history`、`/api/runs`、`/api/notifications`
 
 - [API 参考](skills/marmot/references/api-reference.md)
 - [使用示例](skills/marmot/references/examples.md)
-- [PyPI 发布指南](docs/PYPI_PUBLISHING.md)
+
 
 ## 开发
 

@@ -17,6 +17,7 @@ Design philosophy:
       the interface and configuration, leaving the actual delivery to a
       user-supplied callback (to avoid hard dependencies on SMTP SDKs).
 """
+
 from __future__ import annotations
 
 import abc
@@ -37,27 +38,28 @@ logger = logging.getLogger("marmot.notifiers")
 
 UTC = timezone.utc
 
-# Colors for severity (used in Markdown/HTML notifiers)
-_SEVERITY_EMOJI = {
-    "info": "\u2139\ufe0f",
-    "warning": "\u26a0\ufe0f",
-    "error": "\u274c",
-    "critical": "\U0001f6a8",
+# Severity and state labels (used in Markdown/HTML notifiers)
+_SEVERITY_LABEL = {
+    "info": "[INFO]",
+    "warning": "[WARN]",
+    "error": "[ERROR]",
+    "critical": "[CRITICAL]",
 }
 
-_STATE_ICON = {
-    "firing": "\U0001f525",
-    "resolved": "\u2705",
-    "escalated": "\u2b06\ufe0f",
-    "silenced": "\U0001f6ab",
-    "pending": "\u23f3",
-    "resolving": "\U0001f504",
+_STATE_LABEL = {
+    "firing": "[FIRING]",
+    "resolved": "[RESOLVED]",
+    "escalated": "[ESCALATED]",
+    "silenced": "[SILENCED]",
+    "pending": "[PENDING]",
+    "resolving": "[RESOLVING]",
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Base
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class Notifier(abc.ABC):
     """Abstract base for all notification channels."""
@@ -68,8 +70,9 @@ class Notifier(abc.ABC):
         ...
 
 
-def _http_post(url: str, body: bytes, headers: dict[str, str],
-               timeout: float = 5.0) -> bool:
+def _http_post(
+    url: str, body: bytes, headers: dict[str, str], timeout: float = 5.0
+) -> bool:
     """Low-level HTTP POST helper used by webhook-based notifiers."""
     req = urllib.request.Request(url, data=body, headers=headers)
     try:
@@ -80,17 +83,18 @@ def _http_post(url: str, body: bytes, headers: dict[str, str],
         return False
 
 
-def _severity_emoji(severity: str) -> str:
-    return _SEVERITY_EMOJI.get(severity, "")
+def _severity_label(severity: str) -> str:
+    return _SEVERITY_LABEL.get(severity, "[ALERT]")
 
 
-def _state_icon(state: str) -> str:
-    return _STATE_ICON.get(state, "")
+def _state_label(state: str) -> str:
+    return _STATE_LABEL.get(state, "")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Console (dev / debugging)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class ConsoleNotifier(Notifier):
     """Print notification to stdout.  Ideal for development and debugging.
@@ -102,11 +106,11 @@ class ConsoleNotifier(Notifier):
 
     def send(self, n: Notification) -> bool:
         ts = to_iso(n.sent_at) or utcnow().isoformat()
-        emoji = _severity_emoji(n.severity)
-        icon = _state_icon(n.state)
+        severity_tag = _severity_label(n.severity)
+        state_tag = _state_label(n.state)
         print(
-            f"[{ts}] {emoji} [{n.severity.upper()}] "
-            f"{icon} {n.rule_name}: {n.message} "
+            f"[{ts}] {severity_tag} [{n.severity.upper()}] "
+            f"{state_tag} {n.rule_name}: {n.message} "
             f"(state={n.state}, stage={n.stage})"
         )
         return True
@@ -115,6 +119,7 @@ class ConsoleNotifier(Notifier):
 # ═══════════════════════════════════════════════════════════════════════════
 # Generic Webhook (raw JSON)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class WebhookNotifier(Notifier):
     """Send the full notification dict as JSON to a generic webhook endpoint.
@@ -126,8 +131,9 @@ class WebhookNotifier(Notifier):
         ))
     """
 
-    def __init__(self, url: str, headers: dict[str, str] | None = None,
-                 timeout: float = 5.0):
+    def __init__(
+        self, url: str, headers: dict[str, str] | None = None, timeout: float = 5.0
+    ):
         self.url = url
         self.headers = headers or {}
         self.timeout = timeout
@@ -142,6 +148,7 @@ class WebhookNotifier(Notifier):
 # Markdown Webhook (Slack / Discord / generic Markdown receivers)
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class MarkdownWebhookNotifier(Notifier):
     """Send a Markdown-formatted payload to a webhook.
 
@@ -155,20 +162,23 @@ class MarkdownWebhookNotifier(Notifier):
         ))
     """
 
-    def __init__(self, url: str, headers: dict[str, str] | None = None,
-                 timeout: float = 5.0):
+    def __init__(
+        self, url: str, headers: dict[str, str] | None = None, timeout: float = 5.0
+    ):
         self.url = url
         self.headers = headers or {}
         self.timeout = timeout
 
     def _format(self, n: Notification) -> str:
-        emoji = _severity_emoji(n.severity)
-        icon = _state_icon(n.state)
-        labels_str = ", ".join(f"{k}={v}" for k, v in n.labels.items()) if n.labels else ""
+        severity_tag = _severity_label(n.severity)
+        state_tag = _state_label(n.state)
+        labels_str = (
+            ", ".join(f"{k}={v}" for k, v in n.labels.items()) if n.labels else ""
+        )
         label_line = f"\nLabels: {labels_str}" if labels_str else ""
         ts = to_iso(n.sent_at) or ""
         return (
-            f"{emoji} **[{n.severity.upper()}]** {icon} **{n.rule_name}**\n\n"
+            f"{severity_tag} **[{n.severity.upper()}]** {state_tag} **{n.rule_name}**\n\n"
             f"> {n.message}\n\n"
             f"State: `{n.state}` | Stage: `{n.stage}`{label_line}\n"
             f"Time: {ts}"
@@ -184,6 +194,7 @@ class MarkdownWebhookNotifier(Notifier):
 # ═══════════════════════════════════════════════════════════════════════════
 # DingTalk (钉钉自定义机器人)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class DingTalkNotifier(Notifier):
     """Send alerts to a DingTalk (钉钉) custom robot webhook.
@@ -209,8 +220,9 @@ class DingTalkNotifier(Notifier):
 
     DINGTALK_API = "https://oapi.dingtalk.com/robot/send"
 
-    def __init__(self, webhook_url: str, secret: str | None = None,
-                 timeout: float = 5.0):
+    def __init__(
+        self, webhook_url: str, secret: str | None = None, timeout: float = 5.0
+    ):
         self.webhook_url = webhook_url
         self.secret = secret
         self.timeout = timeout
@@ -230,17 +242,16 @@ class DingTalkNotifier(Notifier):
         return f"{self.webhook_url}{sep}timestamp={ts}&sign={sign}"
 
     def _format(self, n: Notification) -> dict[str, Any]:
-        emoji = _severity_emoji(n.severity)
-        icon = _state_icon(n.state)
+        severity_tag = _severity_label(n.severity)
+        state_tag = _state_label(n.state)
         labels_str = (
-            ", ".join(f"**{k}**: {v}" for k, v in n.labels.items())
-            if n.labels else ""
+            ", ".join(f"**{k}**: {v}" for k, v in n.labels.items()) if n.labels else ""
         )
         label_line = f"\n{labels_str}" if labels_str else ""
         ts = to_iso(n.sent_at) or ""
 
         text = (
-            f"{emoji} **[{n.severity.upper()}]** {icon} **{n.rule_name}**\n\n"
+            f"{severity_tag} **[{n.severity.upper()}]** {state_tag} **{n.rule_name}**\n\n"
             f"> {n.message}\n\n"
             f"State: {n.state} | Stage: {n.stage}{label_line}\n"
             f"Time: {ts}"
@@ -265,6 +276,7 @@ class DingTalkNotifier(Notifier):
 # WeCom / 企业微信
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class WeComNotifier(Notifier):
     """Send alerts to a WeCom (企业微信) group robot webhook.
 
@@ -283,25 +295,27 @@ class WeComNotifier(Notifier):
         ))
     """
 
-    def __init__(self, webhook_url: str,
-                 mentioned_list: list[str] | None = None,
-                 timeout: float = 5.0):
+    def __init__(
+        self,
+        webhook_url: str,
+        mentioned_list: list[str] | None = None,
+        timeout: float = 5.0,
+    ):
         self.webhook_url = webhook_url
         self.mentioned_list = mentioned_list
         self.timeout = timeout
 
     def _format(self, n: Notification) -> dict[str, Any]:
-        emoji = _severity_emoji(n.severity)
-        icon = _state_icon(n.state)
+        severity_tag = _severity_label(n.severity)
+        state_tag = _state_label(n.state)
         labels_str = (
-            ", ".join(f"{k}: {v}" for k, v in n.labels.items())
-            if n.labels else ""
+            ", ".join(f"{k}: {v}" for k, v in n.labels.items()) if n.labels else ""
         )
         label_line = f"\n{labels_str}" if labels_str else ""
         ts = to_iso(n.sent_at) or ""
 
         content = (
-            f"{emoji} **[{n.severity.upper()}]** {icon} **{n.rule_name}**\n"
+            f"{severity_tag} **[{n.severity.upper()}]** {state_tag} **{n.rule_name}**\n"
             f"> {n.message}\n"
             f"State: {n.state} | Stage: {n.stage}{label_line}\n"
             f"Time: {ts}"
@@ -326,6 +340,7 @@ class WeComNotifier(Notifier):
 # Feishu / 飞书
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class FeishuNotifier(Notifier):
     """Send alerts to a Feishu (飞书) custom bot webhook.
 
@@ -344,8 +359,9 @@ class FeishuNotifier(Notifier):
         ))
     """
 
-    def __init__(self, webhook_url: str, secret: str | None = None,
-                 timeout: float = 5.0):
+    def __init__(
+        self, webhook_url: str, secret: str | None = None, timeout: float = 5.0
+    ):
         self.webhook_url = webhook_url
         self.secret = secret
         self.timeout = timeout
@@ -364,16 +380,15 @@ class FeishuNotifier(Notifier):
         return {"timestamp": str(ts), "sign": sign}
 
     def _format(self, n: Notification) -> dict[str, Any]:
-        emoji = _severity_emoji(n.severity)
+        severity_tag = _severity_label(n.severity)
         labels_str = (
-            ", ".join(f"{k}: {v}" for k, v in n.labels.items())
-            if n.labels else ""
+            ", ".join(f"{k}: {v}" for k, v in n.labels.items()) if n.labels else ""
         )
         label_line = f"\n{labels_str}" if labels_str else ""
         ts = to_iso(n.sent_at) or ""
 
         content = [
-            {"tag": "text", "text": f"{emoji} "},
+            {"tag": "text", "text": f"{severity_tag} "},
             {"tag": "text", "text": f"[{n.severity.upper()}] ", "style": ["bold"]},
             {"tag": "text", "text": f"{n.rule_name}\n"},
             {"tag": "text", "text": f"  {n.message}\n"},
@@ -394,9 +409,13 @@ class FeishuNotifier(Notifier):
                     "template": self._severity_color(n.severity),
                 },
                 "elements": [
-                    {"tag": "div", "text": {"tag": "lark_md", "content": "".join(
-                        c.get("text", "") for c in content
-                    )}},
+                    {
+                        "tag": "div",
+                        "text": {
+                            "tag": "lark_md",
+                            "content": "".join(c.get("text", "") for c in content),
+                        },
+                    },
                 ],
             },
         }
@@ -422,6 +441,7 @@ class FeishuNotifier(Notifier):
 # ═══════════════════════════════════════════════════════════════════════════
 # Email (callback-based — zero hard dependencies)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class EmailNotifier(Notifier):
     """Send alerts via email using a user-supplied send callback.
@@ -470,15 +490,14 @@ class EmailNotifier(Notifier):
         self.from_addr = from_addr
 
     def _format(self, n: Notification) -> tuple[str, str]:
-        emoji = _severity_emoji(n.severity)
+        severity_tag = _severity_label(n.severity)
         labels_str = (
-            ", ".join(f"  {k}: {v}" for k, v in n.labels.items())
-            if n.labels else ""
+            ", ".join(f"  {k}: {v}" for k, v in n.labels.items()) if n.labels else ""
         )
         label_block = f"\nLabels:\n{labels_str}" if labels_str else ""
         ts = to_iso(n.sent_at) or ""
 
-        subject = f"[Marmot {emoji} {n.severity.upper()}] {n.rule_name}: {n.message}"
+        subject = f"[Marmot {severity_tag} {n.severity.upper()}] {n.rule_name}: {n.message}"
         body = (
             f"Marmot Alert\n"
             f"{'=' * 40}\n\n"
@@ -504,6 +523,7 @@ class EmailNotifier(Notifier):
 # ═══════════════════════════════════════════════════════════════════════════
 # Phone / SMS (callback-based — zero hard dependencies)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class PhoneNotifier(Notifier):
     """Send alerts via SMS / phone call using a user-supplied callback.
@@ -541,14 +561,13 @@ class PhoneNotifier(Notifier):
         self.to = to
 
     def _format(self, n: Notification) -> str:
-        emoji = _severity_emoji(n.severity)
+        severity_tag = _severity_label(n.severity)
         labels_str = (
-            " ".join(f"{k}={v}" for k, v in n.labels.items())
-            if n.labels else ""
+            " ".join(f"{k}={v}" for k, v in n.labels.items()) if n.labels else ""
         )
         label_part = f" {labels_str}" if labels_str else ""
         return (
-            f"[Marmot{emoji}][{n.severity.upper()}] "
+            f"[Marmot{severity_tag}][{n.severity.upper()}] "
             f"{n.rule_name}: {n.message}{label_part}"
         )
 

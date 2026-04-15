@@ -57,3 +57,4 @@ Thumbs.db
 # Project specific
 alerts.db
 state_machine_diagram.png
+generate_diagram.py

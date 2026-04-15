@@ -16,6 +16,7 @@ API Endpoints::
     GET  /api/rules              → Registered rules
     GET  /api/threshold-rules    → Registered threshold rules
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -118,7 +119,7 @@ HTML = """<!doctype html>
 <body>
   <div class="wrap">
     <header>
-      <h1>\U0001f9a4 <span>Marmot</span></h1>
+      <h1><span>Marmot</span></h1>
     </header>
     <p class="subtitle">Lightweight alert framework for Python — developer-friendly, zero-config monitoring.</p>
     <section class="grid" id="summary"></section>
@@ -225,8 +226,9 @@ class UIServer:
         self.thread.join(timeout=1)
 
 
-def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
-                    port: int = 8765) -> UIServer:
+def start_ui_server(
+    app: "MarmotApp", host: str = "0.0.0.0", port: int = 8765
+) -> UIServer:
     """Start the built-in web console.
 
     Parameters
@@ -240,6 +242,7 @@ def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
     UIServer
         Call ``.stop()`` to shut down.
     """
+
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
@@ -250,9 +253,7 @@ def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
 
             # --- JSON APIs ---
             if parsed.path == "/api/alerts":
-                payload = [
-                    item.to_dict() for item in app.storage.list_active_alerts()
-                ]
+                payload = [item.to_dict() for item in app.storage.list_active_alerts()]
                 self._send_json(payload)
                 return
 
@@ -274,15 +275,13 @@ def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
                 return
 
             if parsed.path == "/api/history":
-                self._send_json([
-                    item.to_dict() for item in app.storage.list_alert_history()
-                ])
+                self._send_json(
+                    [item.to_dict() for item in app.storage.list_alert_history()]
+                )
                 return
 
             if parsed.path == "/api/runs":
-                self._send_json([
-                    item.to_dict() for item in app.storage.list_runs()
-                ])
+                self._send_json([item.to_dict() for item in app.storage.list_runs()])
                 return
 
             if parsed.path == "/api/notifications":
@@ -293,17 +292,21 @@ def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
                 # Combine both rule types
                 items = []
                 for r in app.storage.list_rules():
-                    items.append({
-                        "name": r.name,
-                        "type": "heartbeat",
-                        "notify_targets": r.notify_targets,
-                    })
+                    items.append(
+                        {
+                            "name": r.name,
+                            "type": "heartbeat",
+                            "notify_targets": r.notify_targets,
+                        }
+                    )
                 for r in app.storage.list_threshold_rules():
-                    items.append({
-                        "name": r.name,
-                        "type": "threshold",
-                        "notify_targets": r.notify_targets,
-                    })
+                    items.append(
+                        {
+                            "name": r.name,
+                            "type": "threshold",
+                            "notify_targets": r.notify_targets,
+                        }
+                    )
                 self._send_json(items)
                 return
 
@@ -329,7 +332,8 @@ def start_ui_server(app: "MarmotApp", host: str = "0.0.0.0",
             self.wfile.write(body)
 
     server = ThreadingHTTPServer((host, port), Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True,
-                              name="marmot-ui")
+    thread = threading.Thread(
+        target=server.serve_forever, daemon=True, name="marmot-ui"
+    )
     thread.start()
     return UIServer(app=app, server=server, thread=thread)

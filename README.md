@@ -177,7 +177,7 @@ API endpoints: `/api/alerts`, `/api/history`, `/api/runs`, `/api/notifications`,
 
 - [API Reference](docs/api-reference.md)
 - [Examples](docs/examples.md)
-- [PyPI Publishing Guide](docs/PYPI_PUBLISHING.md)
+
 
 ## Development
 

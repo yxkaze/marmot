@@ -37,18 +37,23 @@ class ThresholdLevel:
     
     属性:
         value: 阈值数值
-        severity: 该阈值的严重程度
+        severity: 该阈值的严重程度（支持字符串或枚举）
         notify: 该等级触发时的通知目标（可选，为空时使用规则默认配置）
         silence_seconds: 该等级触发后的静默时间（可选，为空时使用规则默认配置）
         
     示例:
-        ThresholdLevel(value=80, severity=Severity.WARNING)  # CPU > 80% 触发警告
-        ThresholdLevel(value=95, severity=Severity.CRITICAL)  # CPU > 95% 触发严重告警
+        ThresholdLevel(value=80, severity="warning")  # 字符串
+        ThresholdLevel(value=80, severity=Severity.WARNING)  # 枚举
     """
     value: float
-    severity: Severity
+    severity: Severity | str
     notify: list[str] = field(default_factory=list)
     silence_seconds: float = 0
+    
+    def __post_init__(self):
+        """自动转换字符串为枚举"""
+        if isinstance(self.severity, str):
+            self.severity = Severity(self.severity)
 
 
 @dataclass(slots=True)
@@ -59,15 +64,20 @@ class AggregateConfig:
     在阈值评估前进行聚合。适用于监控一组实例的整体健康状况。
     
     属性:
-        fn: 聚合函数
+        fn: 聚合函数（支持字符串或枚举）
         window: 滑动窗口大小（秒），只计算窗口内的数据点
         
     示例:
-        AggregateConfig(fn=AggregateFn.AVG, window=300)  # 5分钟平均值
-        AggregateConfig(fn=AggregateFn.MAX, window=60)   # 1分钟最大值
+        AggregateConfig(fn="avg", window=300)  # 字符串
+        AggregateConfig(fn=AggregateFn.AVG, window=300)  # 枚举
     """
-    fn: AggregateFn
+    fn: AggregateFn | str
     window: float
+    
+    def __post_init__(self):
+        """自动转换字符串为枚举"""
+        if isinstance(self.fn, str):
+            self.fn = AggregateFn(self.fn)
 
 
 @dataclass(slots=True)
@@ -84,7 +94,7 @@ class Rule:
         timeout_seconds: 超时秒数，超过后触发告警
         silence_seconds: 触发后的静默时间，避免重复告警
         group_key: 分组键，用于聚合相同标签的告警
-        severity: 默认严重程度
+        severity: 默认严重程度（支持字符串或枚举）
         notify_targets: 通知目标列表
         escalation_steps: 升级策略列表
         created_at: 规则创建时间
@@ -94,10 +104,15 @@ class Rule:
     timeout_seconds: float | None = None
     silence_seconds: float = 0
     group_key: str | None = None
-    severity: Severity = Severity.ERROR
+    severity: Severity | str = Severity.ERROR
     notify_targets: list[str] = field(default_factory=list)
     escalation_steps: list[EscalationStep] = field(default_factory=list)
     created_at: datetime = field(default_factory=utcnow)
+    
+    def __post_init__(self):
+        """自动转换字符串为枚举"""
+        if isinstance(self.severity, str):
+            self.severity = Severity(self.severity)
 
 
 @dataclass(slots=True)

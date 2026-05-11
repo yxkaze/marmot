@@ -88,17 +88,27 @@ class TestRuleClasses:
     
     def test_threshold_level(self):
         """测试阈值等级"""
+        # 用枚举
         level = ThresholdLevel(value=80, severity=Severity.WARNING)
         assert level.value == 80
         assert level.severity == Severity.WARNING
         assert level.notify == []
         assert level.silence_seconds == 0
+        
+        # 用字符串
+        level2 = ThresholdLevel(value=95, severity="critical")
+        assert level2.severity == Severity.CRITICAL
     
     def test_aggregate_config(self):
         """测试聚合配置"""
+        # 用枚举
         config = AggregateConfig(fn=AggregateFn.AVG, window=300)
         assert config.fn == AggregateFn.AVG
         assert config.window == 300
+        
+        # 用字符串
+        config2 = AggregateConfig(fn="max", window=60)
+        assert config2.fn == AggregateFn.MAX
     
     def test_rule(self):
         """测试通用规则"""
@@ -112,6 +122,11 @@ class TestRuleClasses:
         assert rule.expected_interval_seconds == 30
         assert rule.timeout_seconds == 60
         assert rule.silence_seconds == 300
+        assert rule.severity == Severity.ERROR  # 默认值
+        
+        # 用字符串设置 severity
+        rule2 = Rule(name="test", severity="warning")
+        assert rule2.severity == Severity.WARNING
     
     def test_threshold_rule_evaluate(self):
         """测试阈值规则评估"""

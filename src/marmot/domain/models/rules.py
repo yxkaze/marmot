@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from .enums import AggregateFn, Severity
 from .time_utils import utcnow
 
 
@@ -36,16 +37,16 @@ class ThresholdLevel:
     
     属性:
         value: 阈值数值
-        severity: 该阈值的严重程度 (info/warning/error/critical)
+        severity: 该阈值的严重程度
         notify: 该等级触发时的通知目标（可选，为空时使用规则默认配置）
         silence_seconds: 该等级触发后的静默时间（可选，为空时使用规则默认配置）
         
     示例:
-        ThresholdLevel(value=80, severity="warning")  # CPU > 80% 触发警告
-        ThresholdLevel(value=95, severity="critical")  # CPU > 95% 触发严重告警
+        ThresholdLevel(value=80, severity=Severity.WARNING)  # CPU > 80% 触发警告
+        ThresholdLevel(value=95, severity=Severity.CRITICAL)  # CPU > 95% 触发严重告警
     """
     value: float
-    severity: str
+    severity: Severity
     notify: list[str] = field(default_factory=list)
     silence_seconds: float = 0
 
@@ -58,14 +59,14 @@ class AggregateConfig:
     在阈值评估前进行聚合。适用于监控一组实例的整体健康状况。
     
     属性:
-        fn: 聚合函数 (avg/max/min/sum/count)
+        fn: 聚合函数
         window: 滑动窗口大小（秒），只计算窗口内的数据点
         
     示例:
-        AggregateConfig(fn="avg", window=300)  # 5分钟平均值
-        AggregateConfig(fn="max", window=60)   # 1分钟最大值
+        AggregateConfig(fn=AggregateFn.AVG, window=300)  # 5分钟平均值
+        AggregateConfig(fn=AggregateFn.MAX, window=60)   # 1分钟最大值
     """
-    fn: str
+    fn: AggregateFn
     window: float
 
 
@@ -93,7 +94,7 @@ class Rule:
     timeout_seconds: float | None = None
     silence_seconds: float = 0
     group_key: str | None = None
-    severity: str = "error"
+    severity: Severity = Severity.ERROR
     notify_targets: list[str] = field(default_factory=list)
     escalation_steps: list[EscalationStep] = field(default_factory=list)
     created_at: datetime = field(default_factory=utcnow)

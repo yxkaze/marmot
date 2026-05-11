@@ -88,16 +88,16 @@ class TestRuleClasses:
     
     def test_threshold_level(self):
         """测试阈值等级"""
-        level = ThresholdLevel(value=80, severity="warning")
+        level = ThresholdLevel(value=80, severity=Severity.WARNING)
         assert level.value == 80
-        assert level.severity == "warning"
+        assert level.severity == Severity.WARNING
         assert level.notify == []
         assert level.silence_seconds == 0
     
     def test_aggregate_config(self):
         """测试聚合配置"""
-        config = AggregateConfig(fn="avg", window=300)
-        assert config.fn == "avg"
+        config = AggregateConfig(fn=AggregateFn.AVG, window=300)
+        assert config.fn == AggregateFn.AVG
         assert config.window == 300
     
     def test_rule(self):
@@ -118,8 +118,8 @@ class TestRuleClasses:
         rule = ThresholdRule(
             name="cpu_usage",
             thresholds=[
-                ThresholdLevel(value=80, severity="warning"),
-                ThresholdLevel(value=95, severity="critical"),
+                ThresholdLevel(value=80, severity=Severity.WARNING),
+                ThresholdLevel(value=95, severity=Severity.CRITICAL),
             ],
         )
         
@@ -130,13 +130,13 @@ class TestRuleClasses:
         level = rule.evaluate(85.0)
         assert level is not None
         assert level.value == 80
-        assert level.severity == "warning"
+        assert level.severity == Severity.WARNING
         
         # 超过 critical
         level = rule.evaluate(96.0)
         assert level is not None
         assert level.value == 95
-        assert level.severity == "critical"
+        assert level.severity == Severity.CRITICAL
 
 
 class TestEventClasses:

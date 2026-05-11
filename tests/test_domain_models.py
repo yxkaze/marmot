@@ -147,13 +147,15 @@ class TestEventClasses:
         event = AlertEvent(
             rule_name="cpu_usage",
             dedup_key="cpu_usage:host=prod-1",
-            state=AlertState.FIRING.value,
-            severity=Severity.ERROR.value,
+            state=AlertState.FIRING,
+            severity=Severity.ERROR,
+            stage=AlertStage.THRESHOLD,
         )
         assert event.rule_name == "cpu_usage"
         assert event.dedup_key == "cpu_usage:host=prod-1"
-        assert event.state == "firing"
-        assert event.severity == "error"
+        assert event.state == AlertState.FIRING
+        assert event.severity == Severity.ERROR
+        assert event.stage == AlertStage.THRESHOLD
         assert event.consecutive_hits == 0
     
     def test_run_record(self):
@@ -161,11 +163,11 @@ class TestEventClasses:
         now = datetime.now(UTC)
         record = RunRecord(
             rule_name="backup",
-            status=RunStatus.SUCCESS.value,
+            status=RunStatus.SUCCESS,
             started_at=now,
             finished_at=now + timedelta(seconds=5),
         )
-        assert record.status == "success"
+        assert record.status == RunStatus.SUCCESS
         assert record.duration_ms == pytest.approx(5000.0, rel=0.01)
     
     def test_run_record_not_finished(self):
@@ -179,11 +181,11 @@ class TestEventClasses:
             alert_event_id=1,
             rule_name="cpu_usage",
             notifier_name="dingtalk",
-            status=NotificationStatus.SENT.value,
+            status=NotificationStatus.SENT,
         )
         assert notification.alert_event_id == 1
         assert notification.notifier_name == "dingtalk"
-        assert notification.status == "sent"
+        assert notification.status == NotificationStatus.SENT
 
 
 class TestTimeUtils:

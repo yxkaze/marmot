@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from .enums import AlertState, AlertStage, NotificationStatus, RunStatus, Severity
 from .time_utils import utcnow
 
 
@@ -22,9 +23,9 @@ class AlertEvent:
         id: 数据库主键（自动生成）
         rule_name: 规则名称
         dedup_key: 去重键（rule_name + labels 的哈希）
-        state: 当前状态 (pending/firing/silenced/escalated/resolving/resolved)
-        severity: 严重程度 (info/warning/error/critical)
-        stage: 触发机制 (threshold/timeout/heartbeat/manual)
+        state: 当前状态
+        severity: 严重程度
+        stage: 触发机制
         message: 告警消息
         labels: 标签字典，用于区分同一规则的不同实例
         current_value: 当前指标值（阈值场景）
@@ -39,9 +40,9 @@ class AlertEvent:
     id: int | None = None
     rule_name: str = ""
     dedup_key: str = ""
-    state: str = "pending"
-    severity: str = "error"
-    stage: str = "threshold"
+    state: AlertState = AlertState.PENDING
+    severity: Severity | None = None
+    stage: AlertStage | None = None
     message: str = ""
     labels: dict[str, Any] = field(default_factory=dict)
     current_value: float | None = None
@@ -64,7 +65,7 @@ class RunRecord:
         id: 数据库主键（自动生成）
         rule_name: 规则名称
         dedup_key: 去重键
-        status: 执行状态 (running/success/failed/timeout)
+        status: 执行状态
         message: 执行消息
         error: 错误信息（如果有）
         labels: 标签字典
@@ -74,7 +75,7 @@ class RunRecord:
     id: int | None = None
     rule_name: str = ""
     dedup_key: str = ""
-    status: str = "running"
+    status: RunStatus = RunStatus.RUNNING
     message: str = ""
     error: str | None = None
     labels: dict[str, Any] = field(default_factory=dict)
@@ -104,7 +105,7 @@ class Notification:
         alert_event_id: 关联的告警事件 ID
         rule_name: 规则名称
         dedup_key: 去重键
-        status: 发送状态 (pending/sent/failed)
+        status: 发送状态
         state: 触发时的告警状态
         message: 通知消息内容
         severity: 严重程度
@@ -117,11 +118,11 @@ class Notification:
     alert_event_id: int = 0
     rule_name: str = ""
     dedup_key: str = ""
-    status: str = "pending"
-    state: str = ""
+    status: NotificationStatus = NotificationStatus.PENDING
+    state: AlertState | None = None
     message: str = ""
-    severity: str = ""
+    severity: Severity | None = None
     labels: dict[str, Any] = field(default_factory=dict)
-    stage: str = ""
+    stage: AlertStage | None = None
     notifier_name: str = ""
     sent_at: datetime = field(default_factory=utcnow)

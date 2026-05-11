@@ -82,9 +82,19 @@ class TestRuleClasses:
     
     def test_escalation_step(self):
         """测试升级步骤"""
+        # 不指定 severity
         step = EscalationStep(after_seconds=300, notify=["sms", "phone"])
         assert step.after_seconds == 300
         assert step.notify == ["sms", "phone"]
+        assert step.severity is None
+        
+        # 用字符串指定 severity
+        step2 = EscalationStep(after_seconds=600, severity="critical", notify=["manager"])
+        assert step2.severity == Severity.CRITICAL
+        
+        # 用枚举指定 severity
+        step3 = EscalationStep(after_seconds=900, severity=Severity.ERROR)
+        assert step3.severity == Severity.ERROR
     
     def test_threshold_level(self):
         """测试阈值等级"""

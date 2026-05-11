@@ -14,19 +14,30 @@ from .time_utils import utcnow
 
 @dataclass(slots=True)
 class EscalationStep:
-    """升级步骤配置。
+    """升级步骤配置（可选）。
     
-    当告警处于 FIRING 状态超过 after_seconds 秒后，会升级并发送通知到 notify 列表中的通道。
+    当告警处于 FIRING 状态超过 after_seconds 秒后，升级严重程度并发送通知。
     
     属性:
         after_seconds: 触发升级所需的秒数
+        severity: 升级到的严重程度（可选）
         notify: 升级后发送通知的目标列表
         
     示例:
-        EscalationStep(after_seconds=300, notify=["sms", "phone"])  # 5分钟后升级到短信和电话
+        # 升级严重程度
+        EscalationStep(after_seconds=300, severity="error", notify=["sms"])
+        
+        # 只改变通知目标，不改严重程度
+        EscalationStep(after_seconds=600, notify=["phone"])
     """
     after_seconds: float
+    severity: Severity | str | None = None
     notify: list[str] = field(default_factory=list)
+    
+    def __post_init__(self):
+        """自动转换字符串为枚举"""
+        if isinstance(self.severity, str):
+            self.severity = Severity(self.severity)
 
 
 @dataclass(slots=True)

@@ -6,9 +6,14 @@ No I/O, no threads, pure data definitions.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Optional
+
+
+def _utcnow() -> datetime:
+    """返回当前 UTC 时间（避免 deprecation warning）。"""
+    return datetime.now(UTC)
 
 
 class AlertState(str, Enum):
@@ -207,7 +212,7 @@ class Rule:
     severity: str = "error"
     notify_targets: list[str] = field(default_factory=list)
     escalation_steps: list[EscalationStep] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)
 
 
 @dataclass(slots=True)
@@ -314,7 +319,7 @@ class AlertEvent:
     current_value: float | None = None
     consecutive_hits: int = 0
     consecutive_misses: int = 0
-    fired_at: datetime = field(default_factory=datetime.utcnow)
+    fired_at: datetime = field(default_factory=_utcnow)
     resolved_at: datetime | None = None
     silenced_until: datetime | None = None
     escalated_at: datetime | None = None
@@ -345,7 +350,7 @@ class RunRecord:
     message: str = ""
     error: str | None = None
     labels: dict[str, Any] = field(default_factory=dict)
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=_utcnow)
     finished_at: datetime | None = None
     
     @property
@@ -391,4 +396,4 @@ class Notification:
     labels: dict[str, Any] = field(default_factory=dict)
     stage: str = ""
     notifier_name: str = ""
-    sent_at: datetime = field(default_factory=datetime.utcnow)
+    sent_at: datetime = field(default_factory=_utcnow)

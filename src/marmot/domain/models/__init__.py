@@ -1,15 +1,12 @@
 """
-Domain models - 数据类与枚举。
+Domain models - 数据类、枚举与工具函数。
 
-本模块聚合了所有领域数据结构，方便导入。
-
-为了向后兼容，所有类型都可以从 marmot.domain.models 导入。
-实际定义分散在以下模块中：
-    - enums: 枚举类型
-    - rules: 规则相关数据类
-    - events: 事件相关数据类
-    - time_utils: 时间工具函数
-    - keys: 键生成工具函数
+本模块包含所有领域数据结构，包括：
+    - 枚举类型（enums.py）
+    - 规则相关数据类（rules.py）
+    - 事件相关数据类（events.py）
+    - 时间工具函数（time_utils.py）
+    - 键生成工具函数（keys.py）
 """
 
 # 枚举类型
@@ -38,6 +35,12 @@ from .events import (
     Notification,
 )
 
+# 时间工具函数
+from .time_utils import utcnow, to_iso, from_iso, parse_duration
+
+# 键生成工具函数
+from .keys import build_dedup_key, normalize_notify
+
 __all__ = [
     # 枚举
     "AlertState",
@@ -56,4 +59,11 @@ __all__ = [
     "AlertEvent",
     "RunRecord",
     "Notification",
+    # 工具函数
+    "utcnow",
+    "to_iso",
+    "from_iso",
+    "parse_duration",
+    "build_dedup_key",
+    "normalize_notify",
 ]

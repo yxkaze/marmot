@@ -5,13 +5,10 @@
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
-
-def _utcnow() -> datetime:
-    """返回当前 UTC 时间（避免 deprecation warning）。"""
-    return datetime.now(UTC)
+from .time_utils import utcnow
 
 
 @dataclass(slots=True)
@@ -50,7 +47,7 @@ class AlertEvent:
     current_value: float | None = None
     consecutive_hits: int = 0
     consecutive_misses: int = 0
-    fired_at: datetime = field(default_factory=_utcnow)
+    fired_at: datetime = field(default_factory=utcnow)
     resolved_at: datetime | None = None
     silenced_until: datetime | None = None
     escalated_at: datetime | None = None
@@ -81,7 +78,7 @@ class RunRecord:
     message: str = ""
     error: str | None = None
     labels: dict[str, Any] = field(default_factory=dict)
-    started_at: datetime = field(default_factory=_utcnow)
+    started_at: datetime = field(default_factory=utcnow)
     finished_at: datetime | None = None
     
     @property
@@ -127,4 +124,4 @@ class Notification:
     labels: dict[str, Any] = field(default_factory=dict)
     stage: str = ""
     notifier_name: str = ""
-    sent_at: datetime = field(default_factory=_utcnow)
+    sent_at: datetime = field(default_factory=utcnow)

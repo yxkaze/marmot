@@ -5,13 +5,10 @@
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
-
-def _utcnow() -> datetime:
-    """返回当前 UTC 时间（避免 deprecation warning）。"""
-    return datetime.now(UTC)
+from .time_utils import utcnow
 
 
 @dataclass(slots=True)
@@ -99,7 +96,7 @@ class Rule:
     severity: str = "error"
     notify_targets: list[str] = field(default_factory=list)
     escalation_steps: list[EscalationStep] = field(default_factory=list)
-    created_at: datetime = field(default_factory=_utcnow)
+    created_at: datetime = field(default_factory=utcnow)
 
 
 @dataclass(slots=True)

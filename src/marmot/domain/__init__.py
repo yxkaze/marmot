@@ -5,13 +5,17 @@ Domain layer - 纯逻辑，无 I/O，无线程。
 
 子模块:
     - models: 数据类、枚举与工具函数
-    - decisions: 状态机决策（待实现）
-    - state_machine: 状态机（待实现）
+    - decisions: 状态机决策
+    - state_machine: 状态机
     - evaluator: 规则评估器（待实现）
 """
 
 # 从 models 子模块导入所有类型，方便使用
 from .models import *
+
+# 状态机
+from .decisions import Decision, SideEffect, NotifyFiring, NotifyResolved, NotifyEscalated, EnterSilence, EnterResolving, MarkEscalated
+from .state_machine import AlertStateMachine
 
 __all__ = [
     # 枚举
@@ -38,4 +42,14 @@ __all__ = [
     "parse_duration",
     "build_dedup_key",
     "normalize_notify",
+    # 状态机
+    "Decision",
+    "SideEffect",
+    "NotifyFiring",
+    "NotifyResolved",
+    "NotifyEscalated",
+    "EnterSilence",
+    "EnterResolving",
+    "MarkEscalated",
+    "AlertStateMachine",
 ]

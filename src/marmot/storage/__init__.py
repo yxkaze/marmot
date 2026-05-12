@@ -4,5 +4,6 @@
 提供 Storage Protocol 和多种实现。
 """
 from .base import Storage
+from .memory import MemoryStorage
 
-__all__ = ["Storage"]
+__all__ = ["Storage", "MemoryStorage"]

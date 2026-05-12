@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: Unit 3 完成，MVP 进度 3/7 (43%)
+- **当前进度**: Unit 4 完成，MVP 进度 4/7 (57%)
 
 ## 已完成的工作
 
@@ -251,6 +251,62 @@ src/marmot/domain/
 
 ---
 
+### Unit 4: Storage Protocol + 内存实现 ✅
+
+**新建文件：**
+- `src/marmot/storage/__init__.py` - 存储包入口
+- `src/marmot/storage/base.py` - Storage Protocol 定义
+- `src/marmot/storage/memory.py` - 内存存储实现
+- `tests/test_storage_base.py` - Protocol 测试
+- `tests/test_storage_memory.py` - 内存存储测试
+
+**Storage Protocol 定义：**
+
+定义了存储接口，包括：
+
+**AlertEvent CRUD：**
+- `get_or_create_alert_event()` - 获取或创建告警事件
+- `update_alert_event()` - 更新告警事件
+- `get_alert_event()` - 获取单个告警事件
+- `list_active_alerts()` - 列出活跃告警
+- `list_alert_history()` - 列出告警历史
+
+**RunRecord CRUD：**
+- `create_run_record()` - 创建运行记录
+- `list_recent_runs()` - 列出最近运行记录
+
+**Notification CRUD：**
+- `create_notification()` - 创建通知记录
+- `list_notifications()` - 列出通知记录
+
+**MemoryStorage 实现：**
+
+- 基于 `dict` 和 `list` 的内存存储
+- 线程安全（使用 `RLock`）
+- 自动 ID 分配
+- 支持去重键索引
+
+**关键设计决策：**
+1. ✅ **Protocol 抽象** - Storage 是 Protocol，便于替换实现
+2. ✅ **线程安全** - 所有操作使用 `with self._lock` 保护
+3. ✅ **去重键索引** - `_alert_events_by_key` 字典加速查找
+4. ✅ **自动 ID 分配** - `_get_next_id()` 方法管理 ID
+
+**测试覆盖：**
+- ✅ 8 个测试用例
+- ✅ 覆盖 AlertEvent、RunRecord、Notification 的 CRUD
+- ✅ 覆盖去重逻辑、更新逻辑、列表过滤
+
+**文件统计：**
+- `storage/base.py`: 131 行
+- `storage/memory.py`: 225 行
+
+**提交记录：**
+- `4591613` - feat: Unit 4.1 - Storage Protocol 定义
+- `c277b38` - feat: Unit 4.2 - 内存存储实现
+
+---
+
 ## 文件统计
 
 ```
@@ -262,8 +318,12 @@ src/marmot/domain/models/keys.py       56 行
 src/marmot/domain/models/__init__.py   51 行
 src/marmot/domain/decisions.py         73 行
 src/marmot/domain/state_machine.py    183 行
+src/marmot/storage/base.py            131 行
+src/marmot/storage/memory.py          225 行
 tests/test_domain_models.py           295 行
 tests/test_state_machine.py           277 行
+tests/test_storage_base.py            24 行
+tests/test_storage_memory.py          134 行
 ```
 
 **所有文件均 ≤ 300 行，符合要求。**
@@ -271,11 +331,6 @@ tests/test_state_machine.py           277 行
 ---
 
 ## 待完成的工作
-
-### Unit 4: Storage Protocol + 内存实现 ⏳
-- `storage/base.py` - Storage Protocol
-- `storage/memory.py` - 内存实现
-- `tests/test_storage_memory.py` - 存储测试
 
 ### Unit 5: Clock + Registry ⏳
 - `runtime/clock.py` - 时间抽象
@@ -310,10 +365,9 @@ tests/test_state_machine.py           277 行
 
 ## 下一步计划
 
-1. **Unit 4**: 实现 Storage Protocol 和内存存储
-2. **Unit 5**: 实现 Clock 和 Registry
-3. **Unit 6**: 实现 Evaluator
-4. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
+1. **Unit 5**: 实现 Clock 和 Registry
+2. **Unit 6**: 实现 Evaluator
+3. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
 
 **预计完成时间**: 2-3 天
 

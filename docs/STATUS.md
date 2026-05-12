@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: Unit 2 完成，MVP 进度 2/7 (28%)
+- **当前进度**: Unit 3 完成，MVP 进度 3/7 (43%)
 
 ## 已完成的工作
 
@@ -200,6 +200,57 @@ src/marmot/domain/
 
 ---
 
+### Unit 3: 纯状态机 ✅
+
+**新建文件：**
+- `src/marmot/domain/decisions.py` - 决策数据类
+- `src/marmot/domain/state_machine.py` - 状态机核心逻辑
+- `tests/test_state_machine.py` - 状态机测试
+
+**决策数据类：**
+
+1. **Decision** - 状态机输出
+   - `new_state: str` - 新状态
+   - `event_patch: dict` - 要更新的事件字段
+   - `actions: list[SideEffect]` - 要执行的动作列表
+
+2. **SideEffect** - 动作并集类型
+   - `NotifyFiring` - 发送告警通知
+   - `NotifyResolved` - 发送恢复通知
+   - `NotifyEscalated` - 发送升级通知（未实现）
+   - `EnterSilence` - 进入静默期
+   - `EnterResolving` - 进入恢复确认
+   - `MarkEscalated` - 标记已升级（未实现）
+
+**状态机逻辑：**
+
+**已实现的状态转换：**
+- `PENDING → FIRING` - 连续N次触发
+- `PENDING → PENDING` - 计数中或恢复正常重置
+- `FIRING → SILENCED` - 进入静默
+- `FIRING → RESOLVING` - 开始恢复
+- `SILENCED → FIRING` - 静默结束，还在触发
+- `SILENCED → RESOLVING` - 静默结束，开始恢复
+- `RESOLVING → RESOLVED` - 连续N次正常
+- `RESOLVING → FIRING` - 又触发了
+- `RESOLVED → PENDING` - 重新触发
+- `ESCALATED → RESOLVING` - 开始恢复
+
+**关键设计决策：**
+1. ✅ **配置驱动** - consecutive_count、silence_seconds 由用户配置
+2. ✅ **纯函数** - 无副作用，不修改 event
+3. ✅ **决策分离** - 状态机只判断，调用者执行动作
+4. ✅ **静默逻辑** - SILENCED 独立状态，避免一直告警
+
+**测试覆盖：**
+- ✅ 10 个状态转换测试用例
+- ✅ 覆盖主要状态转换路径
+
+**提交记录：**
+- `07b01c4` - feat: Unit 3 - 纯状态机
+
+---
+
 ## 文件统计
 
 ```
@@ -209,7 +260,10 @@ src/marmot/domain/models/rules.py     167 行
 src/marmot/domain/models/time_utils.py 104 行
 src/marmot/domain/models/keys.py       56 行
 src/marmot/domain/models/__init__.py   51 行
+src/marmot/domain/decisions.py         73 行
+src/marmot/domain/state_machine.py    183 行
 tests/test_domain_models.py           295 行
+tests/test_state_machine.py           277 行
 ```
 
 **所有文件均 ≤ 300 行，符合要求。**
@@ -217,11 +271,6 @@ tests/test_domain_models.py           295 行
 ---
 
 ## 待完成的工作
-
-### Unit 3: 纯状态机 ⏳
-- `domain/decisions.py` - Decision 和 SideEffect
-- `domain/state_machine.py` - 状态转换逻辑
-- `tests/test_state_machine.py` - 状态机测试
 
 ### Unit 4: Storage Protocol + 内存实现 ⏳
 - `storage/base.py` - Storage Protocol
@@ -261,11 +310,10 @@ tests/test_domain_models.py           295 行
 
 ## 下一步计划
 
-1. **Unit 3**: 实现纯状态机（状态转换逻辑）
-2. **Unit 4**: 实现 Storage Protocol 和内存存储
-3. **Unit 5**: 实现 Clock 和 Registry
-4. **Unit 6**: 实现 Evaluator
-5. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
+1. **Unit 4**: 实现 Storage Protocol 和内存存储
+2. **Unit 5**: 实现 Clock 和 Registry
+3. **Unit 6**: 实现 Evaluator
+4. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
 
 **预计完成时间**: 2-3 天
 
@@ -277,3 +325,4 @@ tests/test_domain_models.py           295 行
 - 所有测试用例都使用中文注释
 - 保持简洁，保留可扩展性
 - 为后续功能预留扩展空间
+- 升级逻辑（Unit 12）留到后面实现

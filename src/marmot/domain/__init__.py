@@ -36,7 +36,6 @@ __all__ = [
     "RunRecord",
     "Notification",
     # 工具函数
-    "utcnow",
     "to_iso",
     "from_iso",
     "parse_duration",

@@ -15,11 +15,11 @@ _DURATION_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*(ms|s|m|h|d)?$")
 def utcnow() -> datetime:
     """返回当前 UTC 时间。
     
+    内部函数，业务代码应通过 Clock.now() 获取时间，方便测试注入。
+    此函数仅用于无 Clock 上下文的底层场景（如数据类默认值）。
+    
     返回:
         当前 UTC 时间的 datetime 对象
-        
-    示例:
-        now = utcnow()  # datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
     """
     return datetime.now(tz=UTC)
 

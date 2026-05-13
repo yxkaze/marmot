@@ -7,7 +7,7 @@ Domain layer - 纯逻辑，无 I/O，无线程。
     - models: 数据类、枚举与工具函数
     - decisions: 状态机决策
     - state_machine: 状态机
-    - evaluator: 规则评估器（待实现）
+    - evaluator: 规则评估器
 """
 
 # 从 models 子模块导入所有类型，方便使用
@@ -16,6 +16,9 @@ from .models import *
 # 状态机
 from .decisions import Decision, SideEffect, NotifyFiring, NotifyResolved, NotifyEscalated, EnterSilence, EnterResolving, MarkEscalated
 from .state_machine import AlertStateMachine
+
+# 评估器
+from .evaluator import ThresholdEvaluator, Observation
 
 __all__ = [
     # 枚举
@@ -51,4 +54,7 @@ __all__ = [
     "EnterResolving",
     "MarkEscalated",
     "AlertStateMachine",
+    # 评估器
+    "ThresholdEvaluator",
+    "Observation",
 ]

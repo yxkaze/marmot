@@ -1,38 +1,25 @@
 """
 存储层 Protocol 定义。
+
+按实体拆分为三个独立的 Protocol：
+- AlertEventStorage: 告警事件存储
+- RunRecordStorage: 运行记录存储
+- NotificationStorage: 通知记录存储
 """
-from datetime import datetime
 from typing import Protocol
 
 from ..domain.models.events import AlertEvent, RunRecord, Notification
 
 
-class Storage(Protocol):
-    """存储抽象 Protocol。
-    
-    定义了告警事件、运行记录、通知记录的 CRUD 操作。
-    对齐 main 分支的 SQLiteStorage 接口设计。
-    """
-    
-    # ── AlertEvent ──────────────────────────────────────
+class AlertEventStorage(Protocol):
+    """告警事件存储 Protocol。"""
     
     def create_alert_event(self, event: AlertEvent) -> AlertEvent:
-        """创建告警事件。
-        
-        参数:
-            event: 告警事件对象（id 可为 None，由存储层分配）
-            
-        返回:
-            带有 id 的事件对象
-        """
+        """创建告警事件。"""
         ...
     
     def update_alert_event(self, event: AlertEvent) -> None:
-        """更新告警事件。
-        
-        参数:
-            event: 带有 id 的事件对象，按 id 匹配更新
-        """
+        """更新告警事件。"""
         ...
     
     def get_alert(self, alert_id: int) -> AlertEvent | None:
@@ -40,28 +27,23 @@ class Storage(Protocol):
         ...
     
     def get_active_alert(self, dedup_key: str) -> AlertEvent | None:
-        """通过 dedup_key 获取当前活跃的（未恢复的）告警事件。"""
+        """通过 dedup_key 获取当前活跃的告警事件。"""
         ...
     
     def list_active_alerts(self) -> list[AlertEvent]:
-        """列出所有活跃告警（未恢复的）。"""
+        """列出所有活跃告警。"""
         ...
     
     def list_alert_history(self, limit: int = 100) -> list[AlertEvent]:
         """列出已恢复的告警历史。"""
         ...
-    
-    # ── RunRecord ───────────────────────────────────────
+
+
+class RunRecordStorage(Protocol):
+    """运行记录存储 Protocol。"""
     
     def create_run(self, run: RunRecord) -> RunRecord:
-        """创建运行记录。
-        
-        参数:
-            run: 运行记录对象（id 可为 None，由存储层分配）
-            
-        返回:
-            带有 id 的记录对象
-        """
+        """创建运行记录。"""
         ...
     
     def update_run(self, run: RunRecord) -> None:
@@ -79,15 +61,13 @@ class Storage(Protocol):
     def list_runs(self, limit: int = 100) -> list[RunRecord]:
         """列出运行记录。"""
         ...
-    
-    # ── Notification ────────────────────────────────────
+
+
+class NotificationStorage(Protocol):
+    """通知记录存储 Protocol。"""
     
     def record_notification(self, n: Notification) -> int:
-        """记录通知。
-        
-        返回:
-            记录 ID
-        """
+        """记录通知。"""
         ...
     
     def list_notifications(

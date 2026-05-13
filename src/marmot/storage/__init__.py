@@ -1,9 +1,14 @@
 """
 存储层。
 
-提供 Storage Protocol 和多种实现。
+提供三个独立的 Protocol 和多种实现。
 """
-from .base import Storage
+from .base import AlertEventStorage, RunRecordStorage, NotificationStorage
 from .memory import MemoryStorage
 
-__all__ = ["Storage", "MemoryStorage"]
+__all__ = [
+    "AlertEventStorage",
+    "RunRecordStorage",
+    "NotificationStorage",
+    "MemoryStorage",
+]

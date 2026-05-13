@@ -3,10 +3,12 @@
 """
 from .clock import Clock, SystemClock
 from .registry import RuleRegistry, NotifierRegistry
+from .dispatcher import Dispatcher
 
 __all__ = [
     "Clock",
     "SystemClock",
     "RuleRegistry",
     "NotifierRegistry",
+    "Dispatcher",
 ]

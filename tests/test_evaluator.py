@@ -22,7 +22,7 @@ def test_hit_when_value_exceeds_threshold():
     )
     
     evaluator = ThresholdEvaluator()
-    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, None, datetime.utcnow())
+    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, None)
     
     assert obs.hit is True
     assert obs.miss is False
@@ -40,7 +40,7 @@ def test_miss_when_value_below_threshold():
     )
     
     evaluator = ThresholdEvaluator()
-    obs = evaluator.evaluate(rule, 75.0, {"host": "server1"}, None, datetime.utcnow())
+    obs = evaluator.evaluate(rule, 75.0, {"host": "server1"}, None)
     
     assert obs.hit is False
     assert obs.miss is True
@@ -63,13 +63,13 @@ def test_highest_severity_wins():
     
     evaluator = ThresholdEvaluator()
     
-    obs1 = evaluator.evaluate(rule, 85.0, {}, None, datetime.utcnow())
+    obs1 = evaluator.evaluate(rule, 85.0, {}, None)
     assert obs1.matched_severity == Severity.WARNING
     
-    obs2 = evaluator.evaluate(rule, 92.0, {}, None, datetime.utcnow())
+    obs2 = evaluator.evaluate(rule, 92.0, {}, None)
     assert obs2.matched_severity == Severity.ERROR
     
-    obs3 = evaluator.evaluate(rule, 98.0, {}, None, datetime.utcnow())
+    obs3 = evaluator.evaluate(rule, 98.0, {}, None)
     assert obs3.matched_severity == Severity.CRITICAL
 
 
@@ -84,7 +84,7 @@ def test_dedup_key_from_labels():
     )
     
     evaluator = ThresholdEvaluator()
-    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, None, datetime.utcnow())
+    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, None)
     
     assert obs.dedup_key == "cpu_high:host=server1"
 
@@ -109,7 +109,7 @@ def test_dedup_key_reused_from_prior_event():
     )
     
     evaluator = ThresholdEvaluator()
-    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, prior, datetime.utcnow())
+    obs = evaluator.evaluate(rule, 85.0, {"host": "server1"}, prior)
     
     assert obs.dedup_key == "cpu_high:host=server1"
 
@@ -129,10 +129,10 @@ def test_notify_targets_from_matched_level():
     
     evaluator = ThresholdEvaluator()
     
-    obs1 = evaluator.evaluate(rule, 85.0, {}, None, datetime.utcnow())
+    obs1 = evaluator.evaluate(rule, 85.0, {}, None)
     assert obs1.notify_targets == ["console"]
     
-    obs2 = evaluator.evaluate(rule, 92.0, {}, None, datetime.utcnow())
+    obs2 = evaluator.evaluate(rule, 92.0, {}, None)
     assert obs2.notify_targets == ["console", "webhook"]
 
 
@@ -147,6 +147,6 @@ def test_notify_targets_fallback_to_rule():
     )
     
     evaluator = ThresholdEvaluator()
-    obs = evaluator.evaluate(rule, 85.0, {}, None, datetime.utcnow())
+    obs = evaluator.evaluate(rule, 85.0, {}, None)
     
     assert obs.notify_targets == ["console", "email"]

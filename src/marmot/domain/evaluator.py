@@ -5,7 +5,6 @@
 纯函数，无 I/O，不修改状态。
 """
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any
 
 from .models.enums import Severity
@@ -50,7 +49,6 @@ class ThresholdEvaluator:
         value: float,
         labels: dict[str, Any],
         prior_event: AlertEvent | None,
-        now: datetime,
     ) -> Observation:
         """评估阈值。
         
@@ -59,7 +57,6 @@ class ThresholdEvaluator:
             value: 当前值
             labels: 标签
             prior_event: 先前的告警事件
-            now: 当前时间
         """
         # 用规则的 evaluate 方法找到匹配的阈值等级
         matched_level = rule.evaluate(value)
@@ -73,12 +70,8 @@ class ThresholdEvaluator:
         notify_targets = rule.notify_targets
         
         if matched_level:
-            # 转换严重程度为枚举
-            severity = matched_level.severity
-            if isinstance(severity, str):
-                matched_severity = Severity(severity)
-            else:
-                matched_severity = severity
+            # severity 在 __post_init__ 里已经转成枚举了，直接用
+            matched_severity = matched_level.severity
             
             # 等级有自定义通知目标时，优先用等级的
             if matched_level.notify:

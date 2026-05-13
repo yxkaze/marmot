@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: Unit 4 完成，MVP 进度 4/7 (57%)
+- **当前进度**: Unit 5 完成，MVP 进度 5/7 (71%)
 
 ## 已完成的工作
 
@@ -304,6 +304,54 @@ src/marmot/domain/
 **提交记录：**
 - `4591613` - feat: Unit 4.1 - Storage Protocol 定义
 - `c277b38` - feat: Unit 4.2 - 内存存储实现
+- `41b214c` - refactor: 重构 Storage Protocol 和 MemoryStorage，对齐 main 分支设计
+- `ea45dcb` - refactor: 拆分 Storage 为三个独立 Protocol
+
+---
+
+### Unit 5: Clock + Registry ✅
+
+**新建文件：**
+- `src/marmot/runtime/__init__.py` - 运行时组件包入口
+- `src/marmot/runtime/clock.py` - Clock Protocol + SystemClock
+- `src/marmot/runtime/registry.py` - RuleRegistry + NotifierRegistry
+- `tests/test_clock.py` - Clock 测试
+- `tests/test_registry.py` - Registry 测试
+
+**Clock Protocol：**
+- `now() -> datetime` - 获取当前 UTC 时间
+- `monotonic() -> float` - 获取单调时间（不倒退）
+
+**SystemClock：** 生产环境实现，直接调用 `datetime.utcnow()` 和 `time.monotonic()`
+
+**RuleRegistry：**
+- `register_threshold_rule(rule)` - 注册阈值规则
+- `get_threshold_rule(name)` - 获取阈值规则
+- `list_threshold_rules()` - 列出所有阈值规则
+- `register_rule(rule)` - 注册通用规则（心跳/Job）
+- `get_rule(name)` - 获取通用规则
+- `list_rules()` - 列出所有通用规则
+
+**NotifierRegistry：**
+- `register(name, notifier)` - 注册通知器
+- `get(name)` - 获取通知器
+- `list()` - 列出所有通知器名称
+
+**关键设计决策：**
+1. ✅ **Clock Protocol** - 让测试可以注入假时钟，不用 sleep
+2. ✅ **线程安全** - 所有注册表使用 RLock
+3. ✅ **注册 = 配置监控项** - 用户先注册规则，再 report 数据
+
+**测试覆盖：**
+- ✅ 11 个测试用例（Clock 3 个 + Registry 8 个）
+
+**文件统计：**
+- `runtime/clock.py`: 33 行
+- `runtime/registry.py`: 72 行
+
+**提交记录：**
+- `f041cad` - feat: Unit 5.1 - Clock Protocol 和 SystemClock
+- `d27ccf8` - feat: Unit 5.2 - RuleRegistry 和 NotifierRegistry
 
 ---
 
@@ -320,10 +368,14 @@ src/marmot/domain/decisions.py         73 行
 src/marmot/domain/state_machine.py    183 行
 src/marmot/storage/base.py            131 行
 src/marmot/storage/memory.py          225 行
+src/marmot/runtime/clock.py            33 行
+src/marmot/runtime/registry.py         72 行
 tests/test_domain_models.py           295 行
 tests/test_state_machine.py           277 行
 tests/test_storage_base.py            24 行
 tests/test_storage_memory.py          134 行
+tests/test_clock.py                    24 行
+tests/test_registry.py                 84 行
 ```
 
 **所有文件均 ≤ 300 行，符合要求。**
@@ -331,11 +383,6 @@ tests/test_storage_memory.py          134 行
 ---
 
 ## 待完成的工作
-
-### Unit 5: Clock + Registry ⏳
-- `runtime/clock.py` - 时间抽象
-- `runtime/registry.py` - 注册表
-- `tests/test_clock.py`, `tests/test_registry.py`
 
 ### Unit 6: Evaluator（阈值标签模式） ⏳
 - `domain/evaluator.py` - ThresholdEvaluator
@@ -365,11 +412,10 @@ tests/test_storage_memory.py          134 行
 
 ## 下一步计划
 
-1. **Unit 5**: 实现 Clock 和 Registry
-2. **Unit 6**: 实现 Evaluator
-3. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
+1. **Unit 6**: 实现 Evaluator
+2. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
 
-**预计完成时间**: 2-3 天
+**预计完成时间**: 1-2 天
 
 ---
 

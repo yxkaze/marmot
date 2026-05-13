@@ -1,136 +1,258 @@
 """
 测试内存存储实现。
 """
-import pytest
 from datetime import datetime
+
 from marmot.storage.memory import MemoryStorage
-from marmot.domain.models.events import AlertEvent
-from marmot.domain.models.enums import AlertState, Severity
+from marmot.domain.models.events import AlertEvent, RunRecord, Notification
+from marmot.domain.models.enums import AlertState, Severity, RunStatus
+
+
+def _make_event(**overrides) -> AlertEvent:
+    """创建测试用 AlertEvent。"""
+    defaults = dict(
+        rule_name="test_rule",
+        dedup_key="test_key",
+        state=AlertState.PENDING.value,
+        severity=Severity.WARNING.value,
+        message="",
+        labels={},
+        fired_at=datetime.utcnow(),
+    )
+    defaults.update(overrides)
+    return AlertEvent(**defaults)
+
+
+# ── AlertEvent CRUD ─────────────────────────────────────
 
 
 def test_create_alert_event():
     """应该能创建告警事件。"""
     storage = MemoryStorage()
-    event, created = storage.get_or_create_alert_event(
-        rule_name="test_rule",
-        dedup_key="test_key",
-        state=AlertState.PENDING.value,
-        severity=Severity.WARNING.value,
-    )
+    event = _make_event()
+    result = storage.create_alert_event(event)
     
-    assert created is True
-    assert event.rule_name == "test_rule"
-    assert event.dedup_key == "test_key"
-    assert event.state == AlertState.PENDING.value
+    assert result.id is not None
+    assert result.rule_name == "test_rule"
+    assert result.dedup_key == "test_key"
+    assert result.state == AlertState.PENDING.value
 
 
-def test_get_existing_alert_event():
-    """应该能获取已存在的事件。"""
+def test_get_alert():
+    """应该能通过 ID 获取告警事件。"""
     storage = MemoryStorage()
-    event1, created1 = storage.get_or_create_alert_event(
-        rule_name="test_rule",
-        dedup_key="test_key",
-        state=AlertState.PENDING.value,
-    )
+    event = storage.create_alert_event(_make_event())
     
-    event2, created2 = storage.get_or_create_alert_event(
-        rule_name="test_rule",
-        dedup_key="test_key",
-        state=AlertState.FIRING.value,  # 这个值会被忽略
-    )
+    found = storage.get_alert(event.id)
+    assert found is not None
+    assert found.id == event.id
+
+
+def test_get_alert_not_found():
+    """获取不存在的 ID 应该返回 None。"""
+    storage = MemoryStorage()
+    assert storage.get_alert(999) is None
+
+
+def test_get_active_alert():
+    """应该能通过 dedup_key 获取活跃告警。"""
+    storage = MemoryStorage()
+    storage.create_alert_event(_make_event(dedup_key="cpu:server1"))
     
-    assert created1 is True
-    assert created2 is False
-    assert event1.id == event2.id
+    found = storage.get_active_alert("cpu:server1")
+    assert found is not None
+    assert found.dedup_key == "cpu:server1"
+
+
+def test_get_active_alert_resolved():
+    """已恢复的告警不应该被 get_active_alert 找到。"""
+    storage = MemoryStorage()
+    storage.create_alert_event(_make_event(
+        dedup_key="cpu:server1",
+        state=AlertState.RESOLVED.value,
+    ))
+    
+    assert storage.get_active_alert("cpu:server1") is None
+
+
+def test_get_active_alert_not_found():
+    """不存在的 dedup_key 应该返回 None。"""
+    storage = MemoryStorage()
+    assert storage.get_active_alert("nonexistent") is None
 
 
 def test_update_alert_event():
     """应该能更新告警事件。"""
     storage = MemoryStorage()
-    event, _ = storage.get_or_create_alert_event(
-        rule_name="test_rule",
-        dedup_key="test_key",
-        state=AlertState.PENDING.value,
-    )
+    event = storage.create_alert_event(_make_event())
     
-    storage.update_alert_event(event.id, state=AlertState.FIRING.value)
+    event.state = AlertState.FIRING.value
+    event.consecutive_hits = 3
+    storage.update_alert_event(event)
     
-    updated = storage.get_alert_event(event.id)
+    updated = storage.get_alert(event.id)
     assert updated.state == AlertState.FIRING.value
+    assert updated.consecutive_hits == 3
+
+
+def test_update_alert_event_not_found():
+    """更新不存在的 ID 应该抛出异常。"""
+    storage = MemoryStorage()
+    event = _make_event()
+    event.id = 999
+    
+    import pytest
+    with pytest.raises(ValueError):
+        storage.update_alert_event(event)
 
 
 def test_list_active_alerts():
     """应该能列出活跃告警。"""
     storage = MemoryStorage()
-    
-    # 创建活跃告警
-    storage.get_or_create_alert_event(
-        rule_name="rule1",
-        dedup_key="key1",
-        state=AlertState.FIRING.value,
-    )
-    storage.get_or_create_alert_event(
-        rule_name="rule2",
-        dedup_key="key2",
-        state=AlertState.PENDING.value,
-    )
-    
-    # 创建已恢复告警
-    event3, _ = storage.get_or_create_alert_event(
-        rule_name="rule3",
-        dedup_key="key3",
-        state=AlertState.RESOLVED.value,
-    )
+    storage.create_alert_event(_make_event(dedup_key="key1", state=AlertState.FIRING.value))
+    storage.create_alert_event(_make_event(dedup_key="key2", state=AlertState.PENDING.value))
+    storage.create_alert_event(_make_event(dedup_key="key3", state=AlertState.RESOLVED.value))
     
     active = storage.list_active_alerts()
     assert len(active) == 2
+
+
+def test_list_alert_history():
+    """应该能列出已恢复的告警历史。"""
+    storage = MemoryStorage()
+    storage.create_alert_event(_make_event(dedup_key="key1", state=AlertState.FIRING.value))
+    storage.create_alert_event(_make_event(dedup_key="key2", state=AlertState.RESOLVED.value))
     
-    active_rule1 = storage.list_active_alerts(rule_name="rule1")
-    assert len(active_rule1) == 1
+    history = storage.list_alert_history()
+    assert len(history) == 1
 
 
-def test_create_run_record():
+# ── RunRecord CRUD ──────────────────────────────────────
+
+
+def test_create_run():
     """应该能创建运行记录。"""
     storage = MemoryStorage()
-    now = datetime.utcnow()
-    
-    record_id = storage.create_run_record(
-        rule_name="test_job",
-        status="success",
-        message="Job completed",
-        started_at=now,
-        finished_at=now,
+    run = RunRecord(
+        rule_name="backup_job",
+        dedup_key="backup_job",
+        status=RunStatus.SUCCESS.value,
+        message="done",
+        labels={},
+        started_at=datetime.utcnow(),
     )
     
-    assert record_id == 1
-    
-    records = storage.list_recent_runs()
-    assert len(records) == 1
-    assert records[0].rule_name == "test_job"
+    result = storage.create_run(run)
+    assert result.id is not None
+    assert result.rule_name == "backup_job"
 
 
-def test_create_notification():
-    """应该能创建通知记录。"""
+def test_get_run():
+    """应该能通过 ID 获取运行记录。"""
     storage = MemoryStorage()
-    event, _ = storage.get_or_create_alert_event(
-        rule_name="test_rule",
-        dedup_key="test_key",
-        state=AlertState.FIRING.value,
-    )
+    run = storage.create_run(RunRecord(
+        rule_name="backup_job",
+        dedup_key="backup_job",
+        status=RunStatus.SUCCESS.value,
+        labels={},
+        started_at=datetime.utcnow(),
+    ))
     
-    now = datetime.utcnow()
-    notification_id = storage.create_notification(
+    found = storage.get_run(run.id)
+    assert found is not None
+    assert found.id == run.id
+
+
+def test_get_latest_run():
+    """应该能通过 dedup_key 获取最近一条运行记录。"""
+    storage = MemoryStorage()
+    storage.create_run(RunRecord(
+        rule_name="backup_job",
+        dedup_key="backup_job",
+        status=RunStatus.FAILED.value,
+        labels={},
+        started_at=datetime.utcnow(),
+    ))
+    storage.create_run(RunRecord(
+        rule_name="backup_job",
+        dedup_key="backup_job",
+        status=RunStatus.SUCCESS.value,
+        labels={},
+        started_at=datetime.utcnow(),
+    ))
+    
+    latest = storage.get_latest_run("backup_job")
+    assert latest is not None
+    assert latest.status == RunStatus.SUCCESS.value
+
+
+def test_list_runs():
+    """应该能列出运行记录。"""
+    storage = MemoryStorage()
+    storage.create_run(RunRecord(
+        rule_name="job1",
+        dedup_key="job1",
+        status=RunStatus.SUCCESS.value,
+        labels={},
+        started_at=datetime.utcnow(),
+    ))
+    storage.create_run(RunRecord(
+        rule_name="job2",
+        dedup_key="job2",
+        status=RunStatus.FAILED.value,
+        labels={},
+        started_at=datetime.utcnow(),
+    ))
+    
+    runs = storage.list_runs()
+    assert len(runs) == 2
+
+
+# ── Notification ────────────────────────────────────────
+
+
+def test_record_notification():
+    """应该能记录通知。"""
+    storage = MemoryStorage()
+    event = storage.create_alert_event(_make_event())
+    
+    n = Notification(
         alert_event_id=event.id,
         rule_name="test_rule",
         dedup_key="test_key",
         status="sent",
         state=AlertState.FIRING.value,
+        severity=Severity.WARNING.value,
+        message="CPU high",
+        labels={},
+        stage="threshold",
         notifier_name="console",
-        sent_at=now,
+        sent_at=datetime.utcnow(),
     )
     
-    # notification_id 应该是 event.id + 1（因为 event 使用了第一个 ID）
-    assert notification_id == event.id + 1
+    n_id = storage.record_notification(n)
+    assert n_id is not None
+
+
+def test_list_notifications():
+    """应该能列出通知记录。"""
+    storage = MemoryStorage()
+    event = storage.create_alert_event(_make_event())
+    
+    n = Notification(
+        alert_event_id=event.id,
+        rule_name="test_rule",
+        dedup_key="test_key",
+        status="sent",
+        state=AlertState.FIRING.value,
+        severity=Severity.WARNING.value,
+        message="CPU high",
+        labels={},
+        stage="threshold",
+        notifier_name="console",
+        sent_at=datetime.utcnow(),
+    )
+    storage.record_notification(n)
     
     notifications = storage.list_notifications(alert_event_id=event.id)
     assert len(notifications) == 1

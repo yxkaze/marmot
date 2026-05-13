@@ -13,7 +13,7 @@ from ..domain.decisions import (
     EnterResolving,
 )
 from ..domain.models.events import AlertEvent, Notification
-from ..domain.models.enums import NotificationStatus
+from ..domain.models.enums import AlertState, NotificationStatus
 from .registry import NotifierRegistry
 from .clock import Clock
 
@@ -54,7 +54,7 @@ class Dispatcher:
         if isinstance(action, NotifyFiring):
             self._send_notification(
                 event=event,
-                state="firing",
+                state=AlertState.FIRING,
                 severity=action.severity,
                 notify_targets=action.notify_targets,
                 message=f"Alert firing: {event.rule_name}",
@@ -62,7 +62,7 @@ class Dispatcher:
         elif isinstance(action, NotifyResolved):
             self._send_notification(
                 event=event,
-                state="resolved",
+                state=AlertState.RESOLVED,
                 severity=None,
                 notify_targets=action.notify_targets,
                 message=f"Alert resolved: {event.rule_name}",
@@ -73,8 +73,8 @@ class Dispatcher:
     def _send_notification(
         self,
         event: AlertEvent,
-        state: str,
-        severity: str | None,
+        state: AlertState,
+        severity: Any,
         notify_targets: list[str],
         message: str,
     ) -> None:
@@ -90,7 +90,7 @@ class Dispatcher:
                 alert_event_id=event.id,
                 rule_name=event.rule_name,
                 dedup_key=event.dedup_key,
-                status=NotificationStatus.PENDING.value,
+                status=NotificationStatus.PENDING,
                 state=state,
                 severity=severity,
                 labels=event.labels,
@@ -101,8 +101,8 @@ class Dispatcher:
             
             try:
                 success = notifier.send(notification)
-                notification.status = NotificationStatus.SENT.value if success else NotificationStatus.FAILED.value
+                notification.status = NotificationStatus.SENT if success else NotificationStatus.FAILED
             except Exception:
-                notification.status = NotificationStatus.FAILED.value
+                notification.status = NotificationStatus.FAILED
             
             self.storage.record_notification(notification)

@@ -88,7 +88,7 @@ class MarmotApp:
             prior_event = self.storage.create_alert_event(AlertEvent(
                 rule_name=name,
                 dedup_key=dedup_key,
-                state=AlertState.PENDING.value,
+                state=AlertState.PENDING,
                 severity=observation.matched_severity,
                 labels=labels,
                 current_value=value,

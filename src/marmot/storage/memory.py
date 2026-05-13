@@ -53,20 +53,20 @@ class MemoryStorage:
         """通过 dedup_key 获取当前活跃的（未恢复的）告警事件。"""
         with self._lock:
             for event in self._alert_events.values():
-                if event.dedup_key == dedup_key and event.state != AlertState.RESOLVED.value:
+                if event.dedup_key == dedup_key and event.state != AlertState.RESOLVED:
                     return event
             return None
     
     def list_active_alerts(self) -> list[AlertEvent]:
         """列出所有活跃告警。"""
+        active_states = {
+            AlertState.PENDING,
+            AlertState.FIRING,
+            AlertState.SILENCED,
+            AlertState.ESCALATED,
+            AlertState.RESOLVING,
+        }
         with self._lock:
-            active_states = {
-                AlertState.PENDING.value,
-                AlertState.FIRING.value,
-                AlertState.SILENCED.value,
-                AlertState.ESCALATED.value,
-                AlertState.RESOLVING.value,
-            }
             events = [e for e in self._alert_events.values() if e.state in active_states]
             events.sort(key=lambda e: e.fired_at, reverse=True)
             return events
@@ -76,7 +76,7 @@ class MemoryStorage:
         with self._lock:
             resolved = [
                 e for e in self._alert_events.values()
-                if e.state == AlertState.RESOLVED.value
+                if e.state == AlertState.RESOLVED
             ]
             resolved.sort(key=lambda e: e.fired_at, reverse=True)
             return resolved[:limit]

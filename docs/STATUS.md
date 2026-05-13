@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: Unit 6 完成，MVP 进度 6/7 (86%)
+- **当前进度**: MVP 完成 ✅ (7/7)
 
 ## 已完成的工作
 
@@ -386,6 +386,65 @@ src/marmot/domain/
 
 ---
 
+### Unit 7: Dispatcher + MarmotApp + 通知 ✅
+
+**新建文件：**
+- `src/marmot/notifiers/base.py` - Notifier Protocol
+- `src/marmot/notifiers/console.py` - ConsoleNotifier 实现
+- `src/marmot/runtime/dispatcher.py` - 同步分发器
+- `src/marmot/api.py` - MarmotApp 门面
+- `tests/test_notifier_console.py` - ConsoleNotifier 测试
+- `tests/test_dispatcher.py` - Dispatcher 测试
+- `tests/test_report_pipeline.py` - 端到端测试
+- `examples/quickstart.py` - 快速开始示例
+
+**Notifier Protocol：**
+- `send(notification: Notification) -> bool` - 发送通知
+
+**ConsoleNotifier 实现：**
+- 打印格式化通知到控制台
+- 支持自定义输出流（用于测试）
+
+**Dispatcher：**
+- 应用 Decision，更新事件状态
+- 发送通知到注册的 notifier
+
+**MarmotApp：**
+- 组装所有组件（Storage、Clock、Registry、Dispatcher）
+- `report(name, value, labels)` - 完整上报管线
+- `register_threshold_rule()` / `register_rule()` - 注册规则
+- `register_notifier()` - 注册通知器
+- `list_active_alerts()` / `list_alert_history()` - 查询告警
+
+**关键设计决策：**
+1. ✅ **Notifier Protocol** - 便于扩展（Webhook、钉钉、邮件等）
+2. ✅ **同步分发** - 简单直接，Unit 11 升级为异步
+3. ✅ **完整管线** - report → evaluate → transition → dispatch
+4. ✅ **Facade 模式** - 对外提供简洁 API
+
+**测试覆盖：**
+- ✅ 16 个测试用例
+- ✅ 覆盖 ConsoleNotifier、Dispatcher、MarmotApp
+- ✅ 端到端测试验证完整流程
+
+**文件统计：**
+- `notifiers/base.py`: 15 行
+- `notifiers/console.py`: 45 行
+- `runtime/dispatcher.py`: 108 行
+- `api.py`: 173 行
+- `tests/test_notifier_console.py`: 36 行
+- `tests/test_dispatcher.py`: 109 行
+- `tests/test_report_pipeline.py`: 164 行
+- `examples/quickstart.py`: 59 行
+
+**提交记录：**
+- `d30b045` - feat: Unit 7.3 - MarmotApp 和 report() 完整管线
+- `32bd87b` - feat: Unit 7.4 - 快速开始示例
+- `2eddff5` - refactor: 内部代码统一使用枚举，移除所有 .value
+- `a358286` - fix: 修复 datetime.utcnow() 废弃警告，改用 datetime.now(UTC)
+
+---
+
 ## 文件统计
 
 ```
@@ -399,33 +458,69 @@ src/marmot/domain/decisions.py         73 行
 src/marmot/domain/state_machine.py    183 行
 src/marmot/domain/evaluator.py         82 行
 src/marmot/storage/base.py            131 行
-src/marmot/storage/memory.py          225 行
+src/marmot/storage/memory.py          141 行
 src/marmot/runtime/clock.py            33 行
 src/marmot/runtime/registry.py         72 行
+src/marmot/runtime/dispatcher.py      108 行
+src/marmot/notifiers/base.py           15 行
+src/marmot/notifiers/console.py       45 行
+src/marmot/api.py                     173 行
 tests/test_domain_models.py           295 行
 tests/test_state_machine.py           277 行
 tests/test_storage_base.py            24 行
-tests/test_storage_memory.py          134 行
-tests/test_clock.py                    24 行
+tests/test_storage_memory.py          258 行
+tests/test_clock.py                    31 行
 tests/test_registry.py                 84 行
-tests/test_evaluator.py               151 行
+tests/test_evaluator.py               152 行
+tests/test_notifier_console.py        36 行
+tests/test_dispatcher.py              109 行
+tests/test_report_pipeline.py         164 行
 ```
 
 **所有文件均 ≤ 300 行，符合要求。**
+
+**测试统计：**
+- 总计 87 个测试用例，全部通过
+- 0 警告
+
+---
+
+## 已完成的工作
+
+✅ **MVP (Unit 1-7) 已完成！**
+
+**核心功能：**
+- 领域模型：枚举、规则、事件
+- 状态机：告警状态转换逻辑
+- 存储：内存存储实现（可扩展 SQLite）
+- 运行时：Clock 抽象、注册表
+- 评估器：阈值匹配
+- 分发器：决策应用
+- 通知器：ConsoleNotifier
+- API：MarmotApp 门面
 
 ---
 
 ## 待完成的工作
 
-### Unit 7: Dispatcher + 最小 MarmotApp + 同步通知 ⏳
-- `notifiers/base.py` - Notifier Protocol
-- `notifiers/console.py` - ConsoleNotifier
-- `runtime/dispatcher.py` - 同步分发
-- `api.py` - MarmotApp
-- `tests/test_report_pipeline.py`
-- `examples/quickstart.py`
+### Unit 8+: 扩展功能
 
-**完成 Unit 7 后达到 MVP 里程碑 M1。**
+**存储层：**
+- [ ] SQLiteStorage 持久化实现
+- [ ] 数据库迁移工具
+
+**通知层：**
+- [ ] WebhookNotifier
+- [ ] DingTalkNotifier
+- [ ] EmailNotifier
+
+**API 层：**
+- [ ] REST API 端点（FastAPI 或 标准库）
+- [ ] WebSocket 实时告警
+
+**运行时：**
+- [ ] 后台调度器（Unit 11）
+- [ ] 升级策略（Unit 12）
 
 ---
 
@@ -441,9 +536,13 @@ tests/test_evaluator.py               151 行
 
 ## 下一步计划
 
-1. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
+**MVP 已完成！** 进入功能扩展阶段。
 
-**预计完成时间**: 1 天
+1. **Unit 8**: SQLiteStorage 持久化存储
+2. **Unit 9**: WebhookNotifier
+3. **Unit 10**: REST API 端点
+
+**预计完成时间**: 根据需求调整
 
 ---
 

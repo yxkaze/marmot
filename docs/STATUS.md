@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: Unit 5 完成，MVP 进度 5/7 (71%)
+- **当前进度**: Unit 6 完成，MVP 进度 6/7 (86%)
 
 ## 已完成的工作
 
@@ -355,6 +355,37 @@ src/marmot/domain/
 
 ---
 
+### Unit 6: ThresholdEvaluator ✅
+
+**新建文件：**
+- `src/marmot/domain/evaluator.py` - Observation 数据类 + ThresholdEvaluator
+- `tests/test_evaluator.py` - 评估器测试
+
+**Observation 数据类：**
+- `hit: bool` - 是否超过阈值
+- `miss: bool` - 是否低于阈值
+- `matched_severity: Severity | None` - 匹配的最高严重程度
+- `dedup_key: str` - 去重键
+- `notify_targets: list[str]` - 通知目标
+
+**ThresholdEvaluator：**
+- `evaluate(rule, value, labels, prior_event, now) -> Observation`
+- 多阈值匹配时选最高严重程度
+- 匹配等级有 notify 则用等级的，否则用规则的
+- 有 prior_event 时复用 dedup_key
+
+**测试覆盖：**
+- ✅ 7 个测试用例
+- ✅ 覆盖超阈值/低于阈值/多等级/去重键/通知目标
+
+**文件统计：**
+- `domain/evaluator.py`: 82 行
+
+**提交记录：**
+- `ed4ab18` - feat: Unit 6 - ThresholdEvaluator 实现
+
+---
+
 ## 文件统计
 
 ```
@@ -366,6 +397,7 @@ src/marmot/domain/models/keys.py       56 行
 src/marmot/domain/models/__init__.py   51 行
 src/marmot/domain/decisions.py         73 行
 src/marmot/domain/state_machine.py    183 行
+src/marmot/domain/evaluator.py         82 行
 src/marmot/storage/base.py            131 行
 src/marmot/storage/memory.py          225 行
 src/marmot/runtime/clock.py            33 行
@@ -376,6 +408,7 @@ tests/test_storage_base.py            24 行
 tests/test_storage_memory.py          134 行
 tests/test_clock.py                    24 行
 tests/test_registry.py                 84 行
+tests/test_evaluator.py               151 行
 ```
 
 **所有文件均 ≤ 300 行，符合要求。**
@@ -383,10 +416,6 @@ tests/test_registry.py                 84 行
 ---
 
 ## 待完成的工作
-
-### Unit 6: Evaluator（阈值标签模式） ⏳
-- `domain/evaluator.py` - ThresholdEvaluator
-- `tests/test_evaluator_threshold.py`
 
 ### Unit 7: Dispatcher + 最小 MarmotApp + 同步通知 ⏳
 - `notifiers/base.py` - Notifier Protocol
@@ -412,10 +441,9 @@ tests/test_registry.py                 84 行
 
 ## 下一步计划
 
-1. **Unit 6**: 实现 Evaluator
-2. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
+1. **Unit 7**: 实现 Dispatcher 和 MarmotApp（达到 MVP）
 
-**预计完成时间**: 1-2 天
+**预计完成时间**: 1 天
 
 ---
 

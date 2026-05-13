@@ -16,9 +16,9 @@ def test_system_clock_now():
     clock = SystemClock()
     now = clock.now()
     
-    from datetime import datetime
+    from datetime import UTC, datetime
     assert isinstance(now, datetime)
-    assert abs((datetime.utcnow() - now).total_seconds()) < 1.0
+    assert abs((datetime.now(UTC) - now).total_seconds()) < 1.0
 
 
 def test_system_clock_monotonic():

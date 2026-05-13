@@ -1,7 +1,7 @@
 """
 测试 Dispatcher。
 """
-from datetime import datetime
+from datetime import UTC, datetime
 
 from marmot.runtime.dispatcher import Dispatcher
 from marmot.storage.memory import MemoryStorage
@@ -24,7 +24,7 @@ def test_apply_updates_event_state():
         dedup_key="test_key",
         state=AlertState.PENDING.value,
         severity=Severity.WARNING.value,
-        fired_at=datetime.utcnow(),
+        fired_at=datetime.now(UTC),
     ))
     
     decision = Decision(
@@ -61,7 +61,7 @@ def test_apply_notify_firing():
         state=AlertState.PENDING.value,
         severity=Severity.WARNING.value,
         labels={"host": "server1"},
-        fired_at=datetime.utcnow(),
+        fired_at=datetime.now(UTC),
     ))
     
     decision = Decision(
@@ -95,7 +95,7 @@ def test_apply_notify_resolved():
         dedup_key="test_key",
         state=AlertState.RESOLVING.value,
         severity=Severity.WARNING.value,
-        fired_at=datetime.utcnow(),
+        fired_at=datetime.now(UTC),
     ))
     
     decision = Decision(

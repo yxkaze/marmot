@@ -1,7 +1,7 @@
 """
 测试内存存储实现。
 """
-from datetime import datetime
+from datetime import UTC, datetime
 
 from marmot.storage.memory import MemoryStorage
 from marmot.domain.models.events import AlertEvent, RunRecord, Notification
@@ -17,7 +17,7 @@ def _make_event(**overrides) -> AlertEvent:
         severity=Severity.WARNING.value,
         message="",
         labels={},
-        fired_at=datetime.utcnow(),
+        fired_at=datetime.now(UTC),
     )
     defaults.update(overrides)
     return AlertEvent(**defaults)
@@ -139,7 +139,7 @@ def test_create_run():
         status=RunStatus.SUCCESS.value,
         message="done",
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     )
     
     result = storage.create_run(run)
@@ -155,7 +155,7 @@ def test_get_run():
         dedup_key="backup_job",
         status=RunStatus.SUCCESS.value,
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     ))
     
     found = storage.get_run(run.id)
@@ -171,14 +171,14 @@ def test_get_latest_run():
         dedup_key="backup_job",
         status=RunStatus.FAILED.value,
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     ))
     storage.create_run(RunRecord(
         rule_name="backup_job",
         dedup_key="backup_job",
         status=RunStatus.SUCCESS.value,
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     ))
     
     latest = storage.get_latest_run("backup_job")
@@ -194,14 +194,14 @@ def test_list_runs():
         dedup_key="job1",
         status=RunStatus.SUCCESS.value,
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     ))
     storage.create_run(RunRecord(
         rule_name="job2",
         dedup_key="job2",
         status=RunStatus.FAILED.value,
         labels={},
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(UTC),
     ))
     
     runs = storage.list_runs()
@@ -227,7 +227,7 @@ def test_record_notification():
         labels={},
         stage="threshold",
         notifier_name="console",
-        sent_at=datetime.utcnow(),
+        sent_at=datetime.now(UTC),
     )
     
     n_id = storage.record_notification(n)
@@ -250,7 +250,7 @@ def test_list_notifications():
         labels={},
         stage="threshold",
         notifier_name="console",
-        sent_at=datetime.utcnow(),
+        sent_at=datetime.now(UTC),
     )
     storage.record_notification(n)
     

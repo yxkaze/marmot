@@ -1,7 +1,7 @@
 """
 测试 ConsoleNotifier。
 """
-from datetime import datetime
+from datetime import UTC, datetime
 from io import StringIO
 
 from marmot.notifiers.console import ConsoleNotifier
@@ -25,7 +25,7 @@ def test_send_prints_to_output():
         labels={"host": "server1"},
         message="CPU usage is high",
         notifier_name="console",
-        sent_at=datetime.utcnow(),
+        sent_at=datetime.now(UTC),
     )
     
     result = notifier.send(notification)

@@ -2,7 +2,7 @@
 测试阈值评估器。
 """
 import pytest
-from datetime import datetime
+from datetime import UTC, datetime
 
 from marmot.domain.evaluator import ThresholdEvaluator, Observation
 from marmot.domain.models.rules import ThresholdRule, ThresholdLevel
@@ -105,7 +105,7 @@ def test_dedup_key_reused_from_prior_event():
         dedup_key="cpu_high:host=server1",
         state=AlertState.PENDING.value,
         labels={"host": "server1"},
-        fired_at=datetime.utcnow(),
+        fired_at=datetime.now(UTC),
     )
     
     evaluator = ThresholdEvaluator()

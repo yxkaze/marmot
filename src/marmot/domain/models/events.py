@@ -107,11 +107,11 @@ class Notification:
         dedup_key: 去重键
         status: 发送状态
         state: 触发时的告警状态
-        message: 通知消息内容
+        message: 通知消息内容（sink 可写回实际发出的文本以便审计）
         severity: 严重程度
         labels: 标签字典
         stage: 触发机制
-        notifier_name: 通知器名称（如 "dingtalk", "email"）
+        sink_name: Sink 名称（如 "console", "infoflow_ops"）
         sent_at: 发送时间
     """
     id: int | None = None
@@ -124,5 +124,5 @@ class Notification:
     severity: Severity | None = None
     labels: dict[str, Any] = field(default_factory=dict)
     stage: AlertStage | None = None
-    notifier_name: str = ""
+    sink_name: str = ""
     sent_at: datetime = field(default_factory=utcnow)

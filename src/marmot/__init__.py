@@ -5,7 +5,7 @@ from .api import (
     configure,
     get_app,
     register_threshold_rule,
-    register_notifier,
+    register_sink,
     report,
     shutdown,
     MarmotApp,
@@ -17,7 +17,7 @@ from .domain import (
     AlertState,
     Severity,
 )
-from .notifiers import ConsoleNotifier
+from .sinks import console_sink, make_console_sink
 
 __version__ = "0.1.0"
 
@@ -26,7 +26,7 @@ __all__ = [
     "configure",
     "get_app",
     "register_threshold_rule",
-    "register_notifier",
+    "register_sink",
     "report",
     "shutdown",
     "MarmotApp",
@@ -35,5 +35,6 @@ __all__ = [
     "Rule",
     "AlertState",
     "Severity",
-    "ConsoleNotifier",
+    "console_sink",
+    "make_console_sink",
 ]

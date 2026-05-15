@@ -1,7 +1,7 @@
 """
 分发器。
 
-消费 Decision，执行副作用（写存储、发通知）。
+消费 Decision，执行副作用（写存储、调 sink 发通知）。
 """
 from typing import Any
 
@@ -14,24 +14,24 @@ from ..domain.decisions import (
 )
 from ..domain.models.events import AlertEvent, Notification
 from ..domain.models.enums import AlertState, NotificationStatus
-from .registry import NotifierRegistry
+from .registry import SinkRegistry
 from .clock import Clock
 
 
 class Dispatcher:
     """分发器。
     
-    应用决策：更新事件状态、发送通知。
+    应用决策：更新事件状态、调用 sink 发通知、持久化通知记录。
     """
     
     def __init__(
         self,
         storage: Any,
-        notifier_registry: NotifierRegistry,
+        sink_registry: SinkRegistry,
         clock: Clock,
     ):
         self.storage = storage
-        self.notifier_registry = notifier_registry
+        self.sink_registry = sink_registry
         self.clock = clock
     
     def apply(self, event: AlertEvent, decision: Decision) -> None:
@@ -57,7 +57,7 @@ class Dispatcher:
                 state=AlertState.FIRING,
                 severity=action.severity,
                 notify_targets=action.notify_targets,
-                message=f"Alert firing: {event.rule_name}",
+                message="firing",
             )
         elif isinstance(action, NotifyResolved):
             self._send_notification(
@@ -65,7 +65,7 @@ class Dispatcher:
                 state=AlertState.RESOLVED,
                 severity=None,
                 notify_targets=action.notify_targets,
-                message=f"Alert resolved: {event.rule_name}",
+                message="resolved",
             )
         elif isinstance(action, (EnterSilence, EnterResolving)):
             pass
@@ -78,12 +78,16 @@ class Dispatcher:
         notify_targets: list[str],
         message: str,
     ) -> None:
-        """发送通知。"""
+        """对每个目标 sink 调用并持久化记录。
+
+        顺序保证：先调 sink（允许其写回 ``notification.message`` /
+        ``notification.labels``），再 record_notification。
+        """
         now = self.clock.now()
         
         for target in notify_targets:
-            notifier = self.notifier_registry.get(target)
-            if not notifier:
+            sink = self.sink_registry.get(target)
+            if not sink:
                 continue
             
             notification = Notification(
@@ -93,16 +97,21 @@ class Dispatcher:
                 status=NotificationStatus.PENDING,
                 state=state,
                 severity=severity,
-                labels=event.labels,
+                labels=dict(event.labels),
                 message=message,
-                notifier_name=target,
+                sink_name=target,
                 sent_at=now,
             )
             
             try:
-                success = notifier.send(notification)
-                notification.status = NotificationStatus.SENT if success else NotificationStatus.FAILED
+                success = bool(sink(notification))
+                notification.status = (
+                    NotificationStatus.SENT if success else NotificationStatus.FAILED
+                )
             except Exception:
                 notification.status = NotificationStatus.FAILED
             
+            # sink 可能已写回 notification.message / labels，
+            # 此时再持久化能拿到真实内容
             self.storage.record_notification(notification)
+

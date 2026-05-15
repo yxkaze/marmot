@@ -205,11 +205,11 @@ class TestEventClasses:
         notification = Notification(
             alert_event_id=1,
             rule_name="cpu_usage",
-            notifier_name="dingtalk",
+            sink_name="dingtalk",
             status=NotificationStatus.SENT,
         )
         assert notification.alert_event_id == 1
-        assert notification.notifier_name == "dingtalk"
+        assert notification.sink_name == "dingtalk"
         assert notification.status == NotificationStatus.SENT
 
 

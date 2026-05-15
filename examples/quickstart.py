@@ -6,12 +6,12 @@
 from marmot import (
     configure,
     register_threshold_rule,
-    register_notifier,
+    register_sink,
     report,
     shutdown,
     ThresholdRule,
     ThresholdLevel,
-    ConsoleNotifier,
+    console_sink,
     Severity,
 )
 
@@ -23,9 +23,9 @@ def main():
     print("1. 配置 Marmot")
     app = configure(storage="memory")
     
-    # 2. 注册通知器
-    print("2. 注册控制台通知器")
-    register_notifier("console", ConsoleNotifier())
+    # 2. 注册 Sink
+    print("2. 注册控制台 Sink")
+    register_sink("console", console_sink)
     
     # 3. 注册阈值规则
     print("3. 注册 CPU 使用率告警规则")
@@ -62,3 +62,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

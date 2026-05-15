@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: MVP 完成 ✅ (7/7)
+- **当前进度**: MVP 完成 ✅ (7/7) + Unit 8 ✅ Channel/Sink 架构重构
 
 ## 已完成的工作
 
@@ -445,6 +445,93 @@ src/marmot/domain/
 
 ---
 
+### Unit 8: Channel / Sink 架构重构 ✅
+
+**动机：** 原 `Notifier` Protocol（`send(notification) -> bool`）过度抽象，
+屏蔽了 IM 机器人平台（如流 / 飞书 / 钉钉）的原生能力（卡片、@、图片、Markdown）。
+框架不应替用户决定"发什么"。
+
+**核心变化：**
+
+1. **删除 `Notifier` 抽象**
+   - 删除 `src/marmot/notifiers/` 整个目录（base.py / console.py / __init__.py）
+   - 删除 `tests/test_notifier_console.py`
+
+2. **引入 `Sink = Callable[[Notification], bool]`**
+   - 不再是 Protocol/基类，就是普通可调用对象
+   - 用户在 sink 内决定渲染格式与发送方式
+   - sink 可以**写回** `notification.message` / `notification.labels`，
+     dispatcher 在 sink 返回后才持久化，因此实际发送内容会进入审计
+
+3. **新增 Channel 层**：暴露平台原生能力的纯 SDK
+   - `src/marmot/channels/base.py`：`ChannelError` / `RateLimitError`
+   - `src/marmot/channels/console.py`：`ConsoleChannel.write_line(text)`
+   - `src/marmot/channels/infoflow.py`：`InfoFlowChannel`
+     - `send_text(content, *, at_user_ids=None)`
+     - `send_link(title, url, *, at_user_ids=None)`
+     - `send_markdown(content)` —— MD 不支持 AT
+     - `send_image(image: bytes | str | PathLike)` —— 自动 base64
+     - 零依赖：基于 stdlib `urllib.request`
+     - 失败统一抛 `ChannelError`（HTTP / 网络 / 非 JSON / 非 2xx）
+
+4. **新增 Sinks 模块**
+   - `src/marmot/sinks/types.py`：`NotificationSink` 类型别名
+   - `src/marmot/sinks/console.py`：
+     - `make_console_sink(channel=None, *, output=None)` 工厂
+     - `console_sink` 默认实例（按行渲染并写回 `n.message`）
+
+5. **Dispatcher 顺序保证**（关键）
+   ```python
+   sink = self.sink_registry.get(target)
+   try:
+       success = bool(sink(notification))   # 先调 sink，允许写回
+       notification.status = SENT if success else FAILED
+   except Exception:
+       notification.status = FAILED
+   self.storage.record_notification(notification)  # 后持久化，写回生效
+   ```
+
+6. **API / 命名收敛**
+   - `Notification.notifier_name` → `Notification.sink_name`
+   - `NotifierRegistry` → `SinkRegistry`
+   - `register_notifier(name, notifier)` → `register_sink(name, sink)`
+   - `marmot` 顶层导出去掉 `ConsoleNotifier`，新增 `console_sink` / `make_console_sink`
+
+**新增 / 修改文件：**
+
+```
+新增:
+  src/marmot/channels/__init__.py
+  src/marmot/channels/base.py
+  src/marmot/channels/console.py
+  src/marmot/channels/infoflow.py     147 行
+  src/marmot/sinks/__init__.py
+  src/marmot/sinks/types.py
+  src/marmot/sinks/console.py
+  tests/test_channel_console.py
+  tests/test_channel_infoflow.py      13 个用例（mock urlopen）
+  tests/test_sink_console.py
+  examples/infoflow_demo.py           Channel + Sink 端到端示例
+
+删除:
+  src/marmot/notifiers/                整个目录
+  tests/test_notifier_console.py
+```
+
+**测试覆盖：**
+- ✅ 109 个测试用例全部通过
+- ✅ 新增 dispatcher 用例验证 sink 写回与"先 sink 后持久化"顺序
+- ✅ InfoFlowChannel 用例全部通过 `unittest.mock.patch("urllib.request.urlopen")` 完成，零真实网络
+
+**关键设计决策：**
+1. ✅ **框架不渲染** —— "发什么"由用户在 sink 内决定
+2. ✅ **Channel 无状态** —— 不感知 Notification / AlertState，纯机械 SDK
+3. ✅ **Sink 写回 + 后置持久化** —— 既保留审计，又把控制权交给用户
+4. ✅ **零依赖坚持** —— InfoFlow 用 stdlib `urllib`，不引入 httpx / requests
+5. ✅ **AT 仅限 TEXT/LINK** —— 与如流协议保持一致，签名上禁止 MD/IMAGE 传 `at_user_ids`
+
+---
+
 ## 文件统计
 
 ```
@@ -480,7 +567,7 @@ tests/test_report_pipeline.py         164 行
 **所有文件均 ≤ 300 行，符合要求。**
 
 **测试统计：**
-- 总计 87 个测试用例，全部通过
+- 总计 109 个测试用例，全部通过
 - 0 警告
 
 ---
@@ -510,9 +597,11 @@ tests/test_report_pipeline.py         164 行
 - [ ] 数据库迁移工具
 
 **通知层：**
-- [ ] WebhookNotifier
-- [ ] DingTalkNotifier
-- [ ] EmailNotifier
+- [x] Channel / Sink 架构（Unit 8）
+- [x] InfoFlowChannel（如流机器人）
+- [ ] 飞书 / 钉钉 Channel
+- [ ] WebhookChannel（通用）
+- [ ] EmailSink
 
 **API 层：**
 - [ ] REST API 端点（FastAPI 或 标准库）

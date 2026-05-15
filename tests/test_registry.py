@@ -2,7 +2,7 @@
 测试注册表。
 """
 import pytest
-from marmot.runtime.registry import RuleRegistry, NotifierRegistry
+from marmot.runtime.registry import RuleRegistry, SinkRegistry
 from marmot.domain.models.rules import ThresholdRule, Rule, ThresholdLevel
 from marmot.domain.models.enums import Severity
 
@@ -84,41 +84,32 @@ def test_get_rule_not_found():
     assert registry.get_rule("nonexistent") is None
 
 
-# ── NotifierRegistry ────────────────────────────────────
+# ── SinkRegistry ────────────────────────────────────
 
 
-def test_register_and_get_notifier():
-    """应该能注册和获取通知器。"""
-    registry = NotifierRegistry()
-    
-    class FakeNotifier:
-        def send(self, n):
-            return True
-    
-    notifier = FakeNotifier()
-    registry.register("console", notifier)
-    
-    retrieved = registry.get("console")
-    assert retrieved is notifier
+def test_register_and_get_sink():
+    """应该能注册和获取 sink（任意 callable）。"""
+    registry = SinkRegistry()
+
+    sink = lambda n: True
+    registry.register("console", sink)
+
+    assert registry.get("console") is sink
 
 
-def test_get_notifier_not_found():
-    """获取不存在的通知器应该返回 None。"""
-    registry = NotifierRegistry()
+def test_get_sink_not_found():
+    """获取不存在的 sink 应该返回 None。"""
+    registry = SinkRegistry()
     assert registry.get("nonexistent") is None
 
 
-def test_list_notifier_names():
-    """应该能列出所有通知器名称。"""
-    registry = NotifierRegistry()
-    
-    class FakeNotifier:
-        def send(self, n):
-            return True
-    
-    registry.register("console", FakeNotifier())
-    registry.register("webhook", FakeNotifier())
-    
+def test_list_sink_names():
+    """应该能列出所有 sink 名称。"""
+    registry = SinkRegistry()
+
+    registry.register("console", lambda n: True)
+    registry.register("webhook", lambda n: True)
+
     names = registry.list()
     assert "console" in names
     assert "webhook" in names

@@ -226,7 +226,7 @@ def test_record_notification():
         message="CPU high",
         labels={},
         stage="threshold",
-        notifier_name="console",
+        sink_name="console",
         sent_at=datetime.now(UTC),
     )
     
@@ -249,7 +249,7 @@ def test_list_notifications():
         message="CPU high",
         labels={},
         stage="threshold",
-        notifier_name="console",
+        sink_name="console",
         sent_at=datetime.now(UTC),
     )
     storage.record_notification(n)

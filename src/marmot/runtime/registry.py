@@ -1,12 +1,13 @@
 """
 注册表。
 
-管理规则和通知器的注册与查询。
+管理规则和 Sink 的注册与查询。
 """
 from typing import Any
 from threading import RLock
 
 from ..domain.models.rules import ThresholdRule, Rule
+from ..sinks.types import NotificationSink
 
 
 class RuleRegistry:
@@ -48,24 +49,28 @@ class RuleRegistry:
             return list(self._rules.values())
 
 
-class NotifierRegistry:
-    """通知器注册表（线程安全）。"""
+class SinkRegistry:
+    """Sink 注册表（线程安全）。
+
+    Sink 是 ``Callable[[Notification], bool]``，框架不强制为类。
+    """
     
     def __init__(self):
         self._lock = RLock()
-        self._notifiers: dict[str, Any] = {}
+        self._sinks: dict[str, NotificationSink] = {}
     
-    def register(self, name: str, notifier: Any) -> None:
-        """注册通知器。"""
+    def register(self, name: str, sink: NotificationSink) -> None:
+        """注册 sink。"""
         with self._lock:
-            self._notifiers[name] = notifier
+            self._sinks[name] = sink
     
-    def get(self, name: str) -> Any | None:
-        """获取通知器。"""
+    def get(self, name: str) -> NotificationSink | None:
+        """获取 sink。"""
         with self._lock:
-            return self._notifiers.get(name)
+            return self._sinks.get(name)
     
     def list(self) -> list[str]:
-        """列出所有通知器名称。"""
+        """列出所有 sink 名称。"""
         with self._lock:
-            return list(self._notifiers.keys())
+            return list(self._sinks.keys())
+

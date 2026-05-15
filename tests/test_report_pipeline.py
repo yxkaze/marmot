@@ -11,8 +11,8 @@ from marmot.domain.models.enums import Severity
 def test_report_triggers_alert():
     """连续 report 超过阈值应该触发告警。"""
     app = configure(storage="memory")
-    from marmot.notifiers.console import ConsoleNotifier
-    app.register_notifier("console", ConsoleNotifier())
+    from marmot.sinks.console import console_sink
+    app.register_sink("console", console_sink)
     
     rule = ThresholdRule(
         name="cpu_high",
@@ -37,8 +37,8 @@ def test_report_triggers_alert():
 def test_report_resolves_alert():
     """连续 report 低于阈值应该恢复告警。"""
     app = configure(storage="memory")
-    from marmot.notifiers.console import ConsoleNotifier
-    app.register_notifier("console", ConsoleNotifier())
+    from marmot.sinks.console import console_sink
+    app.register_sink("console", console_sink)
     
     rule = ThresholdRule(
         name="cpu_high",

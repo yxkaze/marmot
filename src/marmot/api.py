@@ -14,8 +14,9 @@ from .domain.decisions import NotifyFiring, NotifyResolved
 from .domain.models.keys import build_dedup_key
 from .storage.memory import MemoryStorage
 from .runtime.clock import Clock, SystemClock
-from .runtime.registry import RuleRegistry, NotifierRegistry
+from .runtime.registry import RuleRegistry, SinkRegistry
 from .runtime.dispatcher import Dispatcher
+from .sinks.types import NotificationSink
 
 _app: "MarmotApp | None" = None
 
@@ -34,11 +35,11 @@ class MarmotApp:
         self.storage = storage or MemoryStorage()
         self.clock = clock or SystemClock()
         self.rule_registry = RuleRegistry()
-        self.notifier_registry = NotifierRegistry()
+        self.sink_registry = SinkRegistry()
         self.evaluator = ThresholdEvaluator()
         self.dispatcher = Dispatcher(
             self.storage,
-            self.notifier_registry,
+            self.sink_registry,
             self.clock,
         )
     
@@ -50,9 +51,9 @@ class MarmotApp:
         """注册通用规则。"""
         self.rule_registry.register_rule(rule)
     
-    def register_notifier(self, name: str, notifier: Any) -> None:
-        """注册通知器。"""
-        self.notifier_registry.register(name, notifier)
+    def register_sink(self, name: str, sink: NotificationSink) -> None:
+        """注册 Sink（``Callable[[Notification], bool]``）。"""
+        self.sink_registry.register(name, sink)
     
     def report(
         self,
@@ -158,9 +159,9 @@ def register_threshold_rule(rule: ThresholdRule) -> None:
     get_app().register_threshold_rule(rule)
 
 
-def register_notifier(name: str, notifier: Any) -> None:
-    """注册通知器（模块级便捷函数）。"""
-    get_app().register_notifier(name, notifier)
+def register_sink(name: str, sink: NotificationSink) -> None:
+    """注册 Sink（模块级便捷函数）。"""
+    get_app().register_sink(name, sink)
 
 
 def report(name: str, value: float, labels: dict[str, Any] | None = None) -> None:

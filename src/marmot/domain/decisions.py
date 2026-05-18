@@ -6,6 +6,7 @@
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from .models.enums import AlertState, Severity
@@ -38,7 +39,7 @@ class NotifyEscalated:
 @dataclass(slots=True)
 class EnterSilence:
     """进入静默期。"""
-    until: float
+    until: datetime
 
 
 @dataclass(slots=True)

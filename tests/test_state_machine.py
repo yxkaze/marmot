@@ -106,9 +106,10 @@ class TestStateMachine:
         )
         
         assert decision.new_state == AlertState.SILENCED.value
-        assert "silenced_until" in decision.event_patch
+        assert decision.event_patch["silenced_until"] == now + timedelta(seconds=300)
         assert len(decision.actions) == 1
         assert isinstance(decision.actions[0], EnterSilence)
+        assert decision.actions[0].until == now + timedelta(seconds=300)
     
     def test_firing_to_resolving(self):
         """测试 FIRING → RESOLVING（开始恢复）"""
@@ -186,7 +187,7 @@ class TestStateMachine:
             state=AlertState.SILENCED,
             severity=Severity.ERROR,
             stage=AlertStage.THRESHOLD,
-            silenced_until=(now + timedelta(seconds=100)).timestamp(),
+            silenced_until=now + timedelta(seconds=100),
         )
         
         decision = AlertStateMachine.transition(
@@ -208,7 +209,7 @@ class TestStateMachine:
             state=AlertState.SILENCED,
             severity=Severity.ERROR,
             stage=AlertStage.THRESHOLD,
-            silenced_until=(now - timedelta(seconds=1)).timestamp(),
+            silenced_until=now - timedelta(seconds=1),
         )
         
         decision = AlertStateMachine.transition(
@@ -221,9 +222,11 @@ class TestStateMachine:
         
         # 再次进入静默
         assert decision.new_state == AlertState.SILENCED.value
+        assert decision.event_patch["silenced_until"] == now + timedelta(seconds=300)
         assert len(decision.actions) == 2
         assert isinstance(decision.actions[0], NotifyFiring)
         assert isinstance(decision.actions[1], EnterSilence)
+        assert decision.actions[1].until == now + timedelta(seconds=300)
     
     def test_silenced_expired_start_resolving(self):
         """测试 SILENCED 静默结束，开始恢复"""
@@ -233,7 +236,7 @@ class TestStateMachine:
             state=AlertState.SILENCED,
             severity=Severity.ERROR,
             stage=AlertStage.THRESHOLD,
-            silenced_until=(now - timedelta(seconds=1)).timestamp(),
+            silenced_until=now - timedelta(seconds=1),
         )
         
         decision = AlertStateMachine.transition(

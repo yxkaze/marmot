@@ -4,7 +4,7 @@
 纯函数实现，无副作用。接收当前事件和观测结果，返回决策。
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from .decisions import (
@@ -60,7 +60,7 @@ class AlertStateMachine:
         elif state == AlertState.FIRING:
             if hit:
                 if silence_seconds > 0:
-                    silence_until = now.timestamp() + silence_seconds
+                    silence_until = now + timedelta(seconds=silence_seconds)
                     return Decision(
                         new_state=AlertState.SILENCED,
                         event_patch={"silenced_until": silence_until},
@@ -80,10 +80,10 @@ class AlertStateMachine:
         
         # SILENCED 状态：静默中
         elif state == AlertState.SILENCED:
-            if event.silenced_until and now.timestamp() >= event.silenced_until:
+            if event.silenced_until and now >= event.silenced_until:
                 if hit:
                     if silence_seconds > 0:
-                        silence_until = now.timestamp() + silence_seconds
+                        silence_until = now + timedelta(seconds=silence_seconds)
                         return Decision(
                             new_state=AlertState.SILENCED,
                             event_patch={"silenced_until": silence_until},

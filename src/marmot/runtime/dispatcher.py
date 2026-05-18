@@ -98,6 +98,7 @@ class Dispatcher:
                 state=state,
                 severity=severity,
                 labels=dict(event.labels),
+                stage=event.stage,
                 message=message,
                 sink_name=target,
                 sent_at=now,

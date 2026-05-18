@@ -9,7 +9,7 @@ from marmot.runtime.registry import SinkRegistry
 from marmot.runtime.clock import SystemClock
 from marmot.domain.decisions import Decision, NotifyFiring, NotifyResolved
 from marmot.domain.models.events import AlertEvent, Notification
-from marmot.domain.models.enums import AlertState, NotificationStatus, Severity
+from marmot.domain.models.enums import AlertStage, AlertState, NotificationStatus, Severity
 
 
 def _make_event(storage: MemoryStorage, **overrides) -> AlertEvent:
@@ -18,6 +18,7 @@ def _make_event(storage: MemoryStorage, **overrides) -> AlertEvent:
         dedup_key="test_key",
         state=AlertState.PENDING,
         severity=Severity.WARNING,
+        stage=AlertStage.THRESHOLD,
         labels={},
         fired_at=datetime.now(UTC),
     )
@@ -111,6 +112,7 @@ def test_sink_writeback_message_is_persisted():
     notifications = storage.list_notifications()
     assert len(notifications) == 1
     assert notifications[0].message == "<rendered markdown content>"
+    assert notifications[0].stage is AlertStage.THRESHOLD
     assert notifications[0].status == NotificationStatus.SENT
 
 

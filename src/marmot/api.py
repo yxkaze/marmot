@@ -5,7 +5,7 @@ API 层。
 """
 from typing import Any
 
-from .domain.models.enums import AlertState, Severity
+from .domain.models.enums import AlertStage, AlertState, Severity
 from .domain.models.rules import ThresholdRule, Rule
 from .domain.models.events import AlertEvent
 from .domain.evaluator import ThresholdEvaluator
@@ -91,6 +91,7 @@ class MarmotApp:
                 dedup_key=dedup_key,
                 state=AlertState.PENDING,
                 severity=observation.matched_severity,
+                stage=AlertStage.THRESHOLD,
                 labels=labels,
                 current_value=value,
                 fired_at=self.clock.now(),
@@ -128,7 +129,9 @@ class MarmotApp:
     
     def shutdown(self) -> None:
         """关闭应用。"""
-        pass
+        close = getattr(self.storage, "close", None)
+        if close is not None:
+            close()
 
 
 def configure(

@@ -44,9 +44,10 @@ def test_memory_mode():
 def test_wal_mode_on_file(db_path: Path):
     """文件模式下启用 WAL。"""
     s = SQLiteStorage(db_path)
-    row = s._conn.execute("PRAGMA journal_mode").fetchone()
-    assert row[0] == "wal"
     s.close()
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute("PRAGMA journal_mode").fetchone()
+    assert row[0] == "wal"
 
 
 def test_close_then_error(storage: SQLiteStorage):

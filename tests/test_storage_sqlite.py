@@ -3,7 +3,8 @@ SQLiteStorage 专属测试。
 
 覆盖持久化特性、WAL pragma、close、None 字段往返、labels JSON 往返。
 """
-import tempfile
+import sqlite3
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -22,7 +23,7 @@ def db_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def storage(db_path: Path) -> SQLiteStorage:
+def storage(db_path: Path) -> Iterator[SQLiteStorage]:
     s = SQLiteStorage(db_path)
     yield s
     s.close()
@@ -51,7 +52,7 @@ def test_wal_mode_on_file(db_path: Path):
 def test_close_then_error(storage: SQLiteStorage):
     """close 后操作应该报错。"""
     storage.close()
-    with pytest.raises(Exception):
+    with pytest.raises(sqlite3.ProgrammingError):
         storage.create_alert_event(AlertEvent(
             rule_name="r", dedup_key="k", state=AlertState.PENDING,
             fired_at=datetime.now(UTC),

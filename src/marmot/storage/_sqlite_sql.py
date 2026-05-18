@@ -71,7 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_run_records_started
 
 CREATE TABLE IF NOT EXISTS notifications (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    alert_event_id  INTEGER NOT NULL,
+    alert_event_id  INTEGER NOT NULL REFERENCES alert_events(id) ON DELETE CASCADE,
     rule_name       TEXT    NOT NULL,
     dedup_key       TEXT    NOT NULL,
     status          TEXT    NOT NULL,

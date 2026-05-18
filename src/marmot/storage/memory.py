@@ -50,12 +50,19 @@ class MemoryStorage:
             return self._alert_events.get(alert_id)
     
     def get_active_alert(self, dedup_key: str) -> AlertEvent | None:
-        """通过 dedup_key 获取当前活跃的（未恢复的）告警事件。"""
+        """通过 dedup_key 获取当前活跃的（未恢复的）告警事件。
+
+        若同一 dedup_key 存在多条活跃记录，返回 id 最大的一条（最新创建），
+        与 SQLiteStorage 行为保持一致。
+        """
         with self._lock:
-            for event in self._alert_events.values():
-                if event.dedup_key == dedup_key and event.state != AlertState.RESOLVED:
-                    return event
-            return None
+            matched = [
+                e for e in self._alert_events.values()
+                if e.dedup_key == dedup_key and e.state != AlertState.RESOLVED
+            ]
+            if not matched:
+                return None
+            return max(matched, key=lambda e: e.id or 0)
     
     def list_active_alerts(self) -> list[AlertEvent]:
         """列出所有活跃告警。"""

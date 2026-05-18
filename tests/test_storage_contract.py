@@ -4,6 +4,7 @@
 用 parametrize 让 MemoryStorage 和 SQLiteStorage 跑同一份行为测试，
 确保两者对 Protocol 的语义完全等价。
 """
+from collections.abc import Iterator
 from datetime import UTC, datetime
 
 import pytest
@@ -17,7 +18,7 @@ from marmot.domain.models.enums import (
 
 
 @pytest.fixture(params=["memory", "sqlite"])
-def storage(request, tmp_path):
+def storage(request, tmp_path) -> Iterator:
     """提供两种存储实现。"""
     if request.param == "memory":
         yield MemoryStorage()
@@ -66,6 +67,21 @@ class TestAlertEventContract:
             state=AlertState.RESOLVED, fired_at=_now(),
         ))
         assert storage.get_active_alert("k1") is None
+
+    def test_get_active_alert_returns_latest_when_multiple(self, storage):
+        """同一 dedup_key 存在多条活跃记录时，返回最新创建的（id 最大）。"""
+        first = storage.create_alert_event(AlertEvent(
+            rule_name="r", dedup_key="k",
+            state=AlertState.FIRING, fired_at=_now(),
+        ))
+        second = storage.create_alert_event(AlertEvent(
+            rule_name="r", dedup_key="k",
+            state=AlertState.PENDING, fired_at=_now(),
+        ))
+        active = storage.get_active_alert("k")
+        assert active is not None
+        assert active.id == second.id
+        assert active.id != first.id
 
     def test_update(self, storage):
         event = storage.create_alert_event(AlertEvent(

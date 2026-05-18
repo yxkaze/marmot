@@ -155,6 +155,7 @@ class SQLiteStorage:
     def record_notification(self, n: Notification) -> int:
         with self._lock:
             cur = self._conn.execute(_S.INSERT_NOTIF, _S.notif_params(n))
+            assert cur.lastrowid is not None  # AUTOINCREMENT 保证非 None
             n.id = cur.lastrowid
             return n.id
 

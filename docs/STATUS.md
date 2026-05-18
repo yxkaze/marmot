@@ -4,7 +4,7 @@
 
 - **分支**: `rebuild/v2` (orphan 分支，从零开始)
 - **MVP 目标**: Unit 1-7
-- **当前进度**: MVP 完成 ✅ (7/7) + Unit 8 ✅ Channel/Sink 架构重构
+- **当前进度**: MVP 完成 ✅ (7/7) + Unit 8 ✅ Channel/Sink 架构重构 + Unit 9 ✅ SQLiteStorage
 
 ## 已完成的工作
 
@@ -418,7 +418,7 @@ src/marmot/domain/
 
 **关键设计决策：**
 1. ✅ **Notifier Protocol** - 便于扩展（Webhook、钉钉、邮件等）
-2. ✅ **同步分发** - 简单直接，Unit 11 升级为异步
+2. ✅ **同步分发** - 简单直接，Unit 10 升级为异步
 3. ✅ **完整管线** - report → evaluate → transition → dispatch
 4. ✅ **Facade 模式** - 对外提供简洁 API
 
@@ -532,6 +532,50 @@ src/marmot/domain/
 
 ---
 
+### Unit 9: SQLiteStorage 持久化存储 ✅
+
+**动机：** MemoryStorage 数据进程重启即丢失。需要基于 stdlib `sqlite3` 的持久化后端，
+与 MemoryStorage 完全同契约，支持进程重启后恢复告警状态。
+
+**核心实现：**
+
+1. **SQLiteStorage** — 与 MemoryStorage 同接口
+   - 单 `sqlite3.Connection` + `RLock` 串行化
+   - 文件路径启用 `journal_mode=WAL` + `synchronous=NORMAL`
+   - `isolation_level=None`（autocommit），每次写操作即落盘
+   - `close()` 关闭连接
+
+2. **序列化策略**
+   - 枚举 → `.value` 字符串
+   - `datetime` → ISO-8601（`to_iso / from_iso`）
+   - `labels: dict` → JSON TEXT
+
+3. **表设计**：`alert_events` / `run_records` / `notifications`
+   - 含必要索引（dedup_key+state / state+fired_at / dedup_key+started_at 等）
+
+**新增文件：**
+
+```
+src/marmot/storage/_sqlite_sql.py    243 行（schema + SQL + 序列化 helper）
+src/marmot/storage/sqlite.py         180 行（SQLiteStorage 类）
+tests/test_storage_sqlite.py         10 个用例（持久化、WAL、close、枚举往返、None、labels）
+tests/test_storage_contract.py       36 个用例（Memory + SQLite 共享契约）
+```
+
+**测试覆盖：**
+- ✅ 155 个测试用例全部通过
+- ✅ 持久化验证：写入 → 关闭 → 重开同一文件 → 读到相同 active alert
+- ✅ 共享契约测试确保 Memory / SQLite 行为完全等价
+
+**关键设计决策：**
+1. ✅ **拆分 `_sqlite_sql.py`** — schema + SQL + serde 独立文件，主类 ≤ 180 行
+2. ✅ **autocommit** — 写后即持久化，嵌入式场景无需显式事务管理
+3. ✅ **`:memory:` 跳过 WAL** — WAL 不支持纯内存库
+4. ✅ **枚举主动还原** — `_row_to_*` 中用 `Enum(value)` 还原，不依赖 `__post_init__`
+5. ✅ **零依赖坚持** — 仅 stdlib `sqlite3 / json`
+
+---
+
 ## 文件统计
 
 ```
@@ -567,7 +611,7 @@ tests/test_report_pipeline.py         164 行
 **所有文件均 ≤ 300 行，符合要求。**
 
 **测试统计：**
-- 总计 109 个测试用例，全部通过
+- 总计 155 个测试用例，全部通过
 - 0 警告
 
 ---
@@ -592,24 +636,24 @@ tests/test_report_pipeline.py         164 行
 
 ### Unit 8+: 扩展功能
 
-**存储层：**
-- [ ] SQLiteStorage 持久化实现
+**存储层（Unit 9）：**
+- [x] SQLiteStorage 持久化实现
 - [ ] 数据库迁移工具
+
+**运行时：**
+- [ ] 后台调度器（Unit 10）
+- [ ] 升级策略（Unit 11）
 
 **通知层：**
 - [x] Channel / Sink 架构（Unit 8）
 - [x] InfoFlowChannel（如流机器人）
-- [ ] 飞书 / 钉钉 Channel
-- [ ] WebhookChannel（通用）
+- [ ] 飞书 / 钉钉 Channel（Unit 12）
+- [ ] WebhookChannel（通用，Unit 12）
 - [ ] EmailSink
 
-**API 层：**
+**API 层（Unit 13，优先级低）：**
 - [ ] REST API 端点（FastAPI 或 标准库）
 - [ ] WebSocket 实时告警
-
-**运行时：**
-- [ ] 后台调度器（Unit 11）
-- [ ] 升级策略（Unit 12）
 
 ---
 
@@ -627,9 +671,11 @@ tests/test_report_pipeline.py         164 行
 
 **MVP 已完成！** 进入功能扩展阶段。
 
-1. **Unit 8**: SQLiteStorage 持久化存储
-2. **Unit 9**: WebhookNotifier
-3. **Unit 10**: REST API 端点
+1. **Unit 9**: SQLiteStorage 持久化存储
+2. **Unit 10**: 后台调度器
+3. **Unit 11**: 升级策略
+4. **Unit 12**: 飞书 / 钉钉 / Webhook Channel
+5. **Unit 13**: REST API + WebSocket（可选）
 
 **预计完成时间**: 根据需求调整
 
@@ -641,4 +687,4 @@ tests/test_report_pipeline.py         164 行
 - 所有测试用例都使用中文注释
 - 保持简洁，保留可扩展性
 - 为后续功能预留扩展空间
-- 升级逻辑（Unit 12）留到后面实现
+- 升级逻辑（Unit 11）留到后面实现

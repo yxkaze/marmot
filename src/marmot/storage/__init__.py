@@ -5,10 +5,12 @@
 """
 from .base import AlertEventStorage, RunRecordStorage, NotificationStorage
 from .memory import MemoryStorage
+from .sqlite import SQLiteStorage
 
 __all__ = [
     "AlertEventStorage",
     "RunRecordStorage",
     "NotificationStorage",
     "MemoryStorage",
+    "SQLiteStorage",
 ]
